@@ -1,0 +1,45 @@
+[package]
+name = "tfhe-pod-demo"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+# Experimental replay profile only. It does not change the value-based
+# settlement rule and is not enabled by the evaluation pipeline.
+fixed-fft-experiment = ["tfhe/experimental-force_fft_algo_dif4"]
+
+[[bin]]
+name = "tfhe-pod-demo"
+path = "src/main.rs"
+
+# Executes a committed micro-ISA trace over real TFHE ciphertexts and emits the
+# ciphertext handles the dispute game registers on-chain.
+[[bin]]
+name = "fhe-executor"
+path = "src/bin/fhe-executor.rs"
+
+# Auditor-side inspection of the ciphertext artifacts: safe-deserializes a
+# stored ciphertext and decrypts it (`inspect`), or re-executes a workload from
+# the stored input ciphertexts with the public server key only (`replay`).
+# Driven by scripts/verify-encrypted-execution.mjs.
+[[bin]]
+name = "ct-inspect"
+path = "src/bin/ct-inspect.rs"
+
+[[bin]]
+name = "circuit-executor"
+path = "src/bin/circuit-executor.rs"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+hex.workspace = true
+pod-core = { path = "../pod-core" }
+rayon.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha3.workspace = true
+tfhe.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

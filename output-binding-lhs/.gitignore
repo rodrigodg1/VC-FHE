@@ -1,0 +1,10 @@
+/target
+
+# Generated metrics artifacts (reproduce with `cargo run --release -- bench`)
+/onchain_proofs.json
+/plots_output_binding/
+
+# Evaluation artifacts are VERSIONED on purpose. They are the measured evidence
+# behind the implementation, they are small, and keeping them out of git had a real
+# cost: a smoke run with a reduced sweep silently destroyed the full 160-row
+# dataset with no way to recover it, because nothing tracked the file.

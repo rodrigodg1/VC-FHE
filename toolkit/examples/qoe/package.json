@@ -1,0 +1,23 @@
+{
+  "name": "vcfhe-toolkit-qoe-examples",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Real-data QoE application examples over the full verifiable-FHE pipeline: task definition (toolkit front end), real TFHE computation (Rust), production Solidity contracts, and on-chain verification on a Hardhat node.",
+  "scripts": {
+    "cases:generate": "node data/generate-linear-cases.mjs",
+    "emit:tfhe": "cd ../../../BN254-Signatures && cargo run --release --bin output_binding_tfhe -- emit-onchain-mk-cases ../toolkit/examples/qoe/data/onchain_proofs_qoe_mk.json ../toolkit/examples/qoe/data/linear-cases.qoe.json",
+    "demo:linear": "node linear/run-onchain.mjs",
+    "demo:alarm": "node nonlinear/run-dispute.mjs qoe_mos_degradation_alarm",
+    "demo:regulatory": "node nonlinear/run-dispute.mjs regulatory_qoe_compliance",
+    "fhe:correctness": "cd ../../../fhe-pod && cargo test -p tfhe-pod-demo --test fhe_correctness -- --nocapture",
+    "test": "node --test test/linear-onchain.test.mjs test/nonlinear-dispute.test.mjs",
+    "test:linear": "node --test test/linear-onchain.test.mjs",
+    "test:nonlinear": "node --test test/nonlinear-dispute.test.mjs"
+  },
+  "dependencies": {
+    "@noble/curves": "1.6.0",
+    "ethers": "6.13.4",
+    "solc": "0.8.20"
+  }
+}

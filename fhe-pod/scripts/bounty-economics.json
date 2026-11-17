@@ -1,0 +1,10 @@
+{
+  "revision": "bounded-cost-v1",
+  "classification": "functional-test-budget-not-measured-market-prices",
+  "maxTraceLeaves": 512,
+  "disclosureBaseWei": "20000000000000000",
+  "disclosurePerLeafWei": "2000000000000000",
+  "challengeCostBudgetWei": "250000000000000000",
+  "challengerMarginWei": "250000000000000000",
+  "operatorLossFloorWei": "750000000000000000"
+}

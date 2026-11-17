@@ -1,0 +1,35 @@
+{
+  "schema": "vcfhe-compressed-private-backup-proposal-v1",
+  "status": "unapplied-offline-proposal",
+  "createdAt": "2026-10-28T02:47:32.667274+00:00",
+  "frozenSource": {
+    "smoke_cleanup.py": "c75d40fe52313162fd98d68906ea715ee75c8229b3ed451280bf0564d97d4a0c",
+    "remote.py": "8dd076789380ebb6f1695d7ac0eb07e77458673e1119d4cc91d3118515d37960",
+    "gcp.py": "6a7844f36a9500262aae1a3f88fab2d29d9525113ef87320523877fcffe0399e",
+    "topology.py": "d1e069744316520f322567e7fd7c0a0144479a1e0ce165ce891501a32635f39c"
+  },
+  "candidateFiles": {
+    "test_proposal.py": "0a2544181888984cc24a58b791ae2106a0437582a07940cd902d973795936a26",
+    "README.md": "b55b81a17beb13c51ed369bd56496264e3d32728d48ae5764da0d47fabaa2b42",
+    "compressed_backup.py": "d80558d0fed5620368a0f632273a01c4d7a8885a0dde80897ac27d958fe9eeb2"
+  },
+  "tests": {
+    "count": 14,
+    "passed": true,
+    "scope": "Temporary synthetic archives only; no real private archive payload opened"
+  },
+  "activeA11SourceClosureUnchanged": true,
+  "cloudCalls": [],
+  "originalBackupSchemaChanged": false,
+  "deletionIntegrationImplemented": false,
+  "compressedBackupExecutedOnRealRun": false,
+  "limitations": [
+    "No compression ratio or guaranteed local-space saving",
+    "Offline verification cannot independently establish real cloud quiescence or live resource identity",
+    "Full independent stopped-state inventory, original raw TAR hashes and truthful scope/source bindings are required",
+    "The original frozen verify_backup/apply functions cannot accept this separate compressed format",
+    "All secret state remains unencrypted and private mode0600 inside0700 directory",
+    "Compatibility symlink requires explicit physical destinations and preserved original run identity; relocation mapping is separate"
+  ],
+  "assessment": "Lossless compressed archives and their separate truthful receipt can support cleanup safety after explicit integration review of independent quiescence, complete original inventories, original resource IDs and unchanged deletion scope. They do not authorize cleanup or make the original backup verifier pass."
+}

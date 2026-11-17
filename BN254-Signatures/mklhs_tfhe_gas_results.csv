@@ -1,0 +1,9 @@
+scheme,n,operation,deployment_gas,register_key_gas_mean,admit_record_gas_mean,submit_result_gas,adversarial_checks,consumer_digest_match,consumer_commitment_match
+output_binding_tfhe_multikey,10,SUM,3821851,257733,267490,129595,3/3,true,true
+output_binding_tfhe_multikey,10,SUB,3821863,257727,264340,129571,3/3,true,true
+output_binding_tfhe_multikey,50,SUM,4751443,257730,260885,129595,3/3,true,true
+output_binding_tfhe_multikey,50,SUB,4751455,257729,260604,129595,3/3,true,true
+output_binding_tfhe_multikey,100,SUM,5913421,257730,260962,129595,3/3,true,true
+output_binding_tfhe_multikey,100,SUB,5913433,257732,262242,129595,3/3,true,true
+output_binding_tfhe_multikey,200,SUM,8237389,257732,260240,129595,3/3,true,true
+output_binding_tfhe_multikey,200,SUB,8237401,257730,259944,129595,3/3,true,true

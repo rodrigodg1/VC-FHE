@@ -1,0 +1,193 @@
+{
+  "schema": "measured-setup-review-v1",
+  "half": "both",
+  "hostEnvironment": null,
+  "distributedExecution": {
+    "executionProfile": "gcp-four-hosts-role-local-v1",
+    "hosts": [
+      {
+        "region": "us-east4",
+        "zone": "us-east4-c",
+        "machine_type": "n2d-standard-4",
+        "id": "host-1"
+      },
+      {
+        "region": "europe-west4",
+        "zone": "europe-west4-a",
+        "machine_type": "n2d-standard-4",
+        "id": "host-2"
+      },
+      {
+        "region": "asia-southeast1",
+        "zone": "asia-southeast1-b",
+        "machine_type": "n2d-standard-4",
+        "id": "host-3"
+      },
+      {
+        "region": "australia-southeast1",
+        "zone": "australia-southeast1-b",
+        "machine_type": "n2d-standard-4",
+        "id": "host-4"
+      }
+    ],
+    "roles": [
+      {
+        "id": "validator-1",
+        "role": "validator",
+        "index": 1,
+        "host": "host-1"
+      },
+      {
+        "id": "validator-2",
+        "role": "validator",
+        "index": 2,
+        "host": "host-2"
+      },
+      {
+        "id": "validator-3",
+        "role": "validator",
+        "index": 3,
+        "host": "host-3"
+      },
+      {
+        "id": "validator-4",
+        "role": "validator",
+        "index": 4,
+        "host": "host-4"
+      },
+      {
+        "id": "kms-1",
+        "role": "kms",
+        "index": 1,
+        "host": "host-1"
+      },
+      {
+        "id": "kms-2",
+        "role": "kms",
+        "index": 2,
+        "host": "host-2"
+      },
+      {
+        "id": "kms-3",
+        "role": "kms",
+        "index": 3,
+        "host": "host-3"
+      },
+      {
+        "id": "kms-4",
+        "role": "kms",
+        "index": 4,
+        "host": "host-4"
+      },
+      {
+        "id": "owner-1",
+        "role": "owner",
+        "index": 1,
+        "host": "host-1"
+      },
+      {
+        "id": "owner-2",
+        "role": "owner",
+        "index": 2,
+        "host": "host-2"
+      },
+      {
+        "id": "owner-3",
+        "role": "owner",
+        "index": 3,
+        "host": "host-3"
+      },
+      {
+        "id": "owner-4",
+        "role": "owner",
+        "index": 4,
+        "host": "host-4"
+      },
+      {
+        "id": "operator-1",
+        "role": "operator",
+        "index": 1,
+        "host": "host-1"
+      },
+      {
+        "id": "auditor-1",
+        "role": "auditor",
+        "index": 1,
+        "host": "host-2"
+      },
+      {
+        "id": "auditor-2",
+        "role": "auditor",
+        "index": 2,
+        "host": "host-3"
+      },
+      {
+        "id": "auditor-3",
+        "role": "auditor",
+        "index": 3,
+        "host": "host-4"
+      },
+      {
+        "id": "adjudicator-1",
+        "role": "adjudicator",
+        "index": 1,
+        "host": "host-2"
+      },
+      {
+        "id": "adjudicator-2",
+        "role": "adjudicator",
+        "index": 2,
+        "host": "host-3"
+      },
+      {
+        "id": "adjudicator-3",
+        "role": "adjudicator",
+        "index": 3,
+        "host": "host-4"
+      },
+      {
+        "id": "recipient-1",
+        "role": "recipient",
+        "index": 1,
+        "host": "host-4"
+      },
+      {
+        "id": "coordinator-1",
+        "role": "coordinator",
+        "index": 1,
+        "host": "host-1"
+      }
+    ],
+    "administration": "same-gcp-project",
+    "pairTiming": "coordinator-request-response-including-public-transfer",
+    "evidenceScope": "native-validated-composite-with-preserved-deployment-context"
+  },
+  "hostMetadataStatus": "four-region deployment and resource observations retained",
+  "dockerResources": {},
+  "measuredPairs": 480,
+  "warmups": 18,
+  "fullCases": 27,
+  "windowSeconds": 120,
+  "configuredDisclosureBatchSize": 64,
+  "disclosureBatchSize": 48,
+  "disclosureBatchEvidence": {
+    "configuredBatchSize": 64,
+    "measuredMaximumBatchSize": 48,
+    "batchCount": 84,
+    "publishedLeaves": 3648,
+    "taskCount": 18,
+    "batchSizeCounts": {
+      "16": 6,
+      "32": 12,
+      "48": 66
+    },
+    "eventTopic": "0x4f06e2771c770611ac4e425d815922b2bf8b3693fdbd5e5262fcb7190d360ff6",
+    "method": "authenticated leaf events per sealed successful relay receipt"
+  },
+  "kmsRayonThreads": 1,
+  "kmsTokioThreads": 1,
+  "nonlinearProtocol": "bounty-v2",
+  "nonlinearSchedulingVersion": "audit-first-baseline-in-finality-wait-v1",
+  "keysetScope": "same retained keyset across two validated execution segments",
+  "otherHalfSetup": null
+}

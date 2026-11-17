@@ -1,0 +1,92 @@
+{
+  "dataset": {
+    "id": "STAV360",
+    "citation": "Mahmoud et al., IEEE DataPort doi:10.21227/BCPT-3904; dataset experiment: ICIT 2025, doi:10.1109/ICIT64950.2025.11049277; prior use for QoE prediction: Mahmoud et al., IEEE TMM 2026, doi:10.1109/TMM.2026.3668490",
+    "mirror": "https://github.com/SLG-European-Projects/STAV360 (Raw_Ratings.csv; no upstream license, raw data not redistributed here)",
+    "scale": "ACR 1–5 subjective quality ratings",
+    "sourceCsv": "VC-FHE/datasets/raw/stav360/Raw_Ratings.csv",
+    "generatedAt": "2026-08-15T15:25:32.317Z",
+    "validRows": 1929
+  },
+  "panels": {
+    "mos_variance_4": {
+      "video": "FeedTheDucks",
+      "pattern": "Pattern2_Uniform_Mid",
+      "n": 4,
+      "ratings": [
+        3,
+        4,
+        4,
+        4
+      ],
+      "mean": 3,
+      "variance": 5,
+      "poorCount": 0,
+      "users": [
+        "0001",
+        "0002",
+        "0003",
+        "0004"
+      ],
+      "literatureTask": "Session MOS and opinion dispersion for one 360° video tiling configuration (ITU-T P.800-style aggregation over encrypted ACR scores)."
+    },
+    "mos_variance_8": {
+      "video": "FeedTheDucks",
+      "pattern": "Pattern8_Checkerboard01",
+      "n": 8,
+      "ratings": [
+        2,
+        2,
+        2,
+        2,
+        3,
+        2,
+        2,
+        2
+      ],
+      "mean": 2,
+      "variance": 0,
+      "poorCount": 7,
+      "users": [
+        "0001",
+        "0002",
+        "0003",
+        "0004",
+        "0005",
+        "0006",
+        "0007",
+        "0008"
+      ],
+      "literatureTask": "Checkerboard tiling QoE panel: encrypted mean/variance detect low MOS and rating disagreement without revealing individual viewers."
+    },
+    "poor_rating_sla_8": {
+      "video": "FeedTheDucks",
+      "pattern": "Pattern1_Uniform_Low",
+      "n": 8,
+      "ratings": [
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1
+      ],
+      "mean": 1,
+      "variance": 1,
+      "poorCount": 8,
+      "users": [
+        "0001",
+        "0002",
+        "0003",
+        "0004",
+        "0005",
+        "0006",
+        "0007",
+        "0008"
+      ],
+      "literatureTask": "Poor-experience SLA monitor: count encrypted ACR scores at or below 'fair' (≤2) for low-quality uniform tiling."
+    }
+  }
+}

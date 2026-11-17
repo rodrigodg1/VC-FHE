@@ -1,0 +1,9 @@
+{
+  "source": "distributed/worker.mjs",
+  "sourceSha256": "b16b3930b964f59af04b9762619b7a3bb148e035e9fe6695599e3b30ff8d18d0",
+  "scope": "Original negative-control eligibility block only",
+  "fixtureSha256": "fee91176820769a39c9b844878c6f60f36330b3777cf2767107343ee9e9abb99",
+  "nativeFheCodeChanged": false,
+  "decryptionCodeChanged": false,
+  "protocolRulesChanged": false
+}

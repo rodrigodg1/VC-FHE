@@ -1,0 +1,39 @@
+{
+  "schema": "vcfhe-distributed-preparation-v1",
+  "provider": "gcp",
+  "project_id": "replace-with-your-project-id",
+  "campaign": "vcfhe-wan-test",
+  "layout": "four-hosts",
+  "image_build_backend": "gce",
+  "host_machine_type": "n2-standard-4",
+  "regions": [
+    {"name": "us-central1", "zone": "us-central1-a", "cidr": "10.81.0.0/24"},
+    {"name": "europe-west4", "zone": "europe-west4-a", "cidr": "10.81.1.0/24"},
+    {"name": "asia-southeast1", "zone": "asia-southeast1-b", "cidr": "10.81.2.0/24"},
+    {"name": "australia-southeast1", "zone": "australia-southeast1-a", "cidr": "10.81.3.0/24"}
+  ],
+  "machines": {
+    "validator": "n2-standard-2",
+    "kms": "n2-standard-8",
+    "owner": "n2-standard-4",
+    "operator": "n2-standard-8",
+    "auditor": "n2-standard-8",
+    "adjudicator": "n2-standard-8",
+    "recipient": "n2-standard-4",
+    "coordinator": "n2-standard-8"
+  },
+  "min_cpu_platform": "Intel Ice Lake",
+  "boot_disk_gib": 100,
+  "state_disk_gib": 100,
+  "fhe_parameters": "Test",
+  "fhe_threads": 1,
+  "kms_threads": 1,
+  "window_seconds": 120,
+  "adjudicator_threshold": 2,
+  "kms_response_threshold": 3,
+  "validator_query_threshold": 3,
+  "images": {"campaign": null, "besu": null},
+  "budget": {"currency": "USD", "maximum": 50, "reserve": 10},
+  "cost_estimate": {"hourly_total": null, "planned_hours": null, "transfer_and_storage": null},
+  "measurement_grid": {"paired_measurements": 480, "full_workflows": 27, "warmups": 18, "evaluation_source": "validated-cloud", "preserve_local_evaluation": true}
+}

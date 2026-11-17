@@ -1,0 +1,15 @@
+{
+  "schema": "vcfhe-budget-carryforward-proposal-v1",
+  "status": "unapplied",
+  "source": {
+    "budget.py": "5bdc157fcb469ccc9f87fecc9e9cddecefd07df3b3d1468fb9ad7d45a5d534c3",
+    "launch.py": "28bda13e31cb652c4da1fbc9753432ef809ba7b0fc27f9545820de1a6319f7a0"
+  },
+  "candidate": {
+    "budget.py": "3389f59d767ca0850e594171742941ba6c5497c8100b81eb77886ea795fdab2b",
+    "launch.py": "29608db3f6cee6e75f16a0bb3a43f4ff5bd46b7c4b671d565c4e4585cd6d8939"
+  },
+  "defaultPriorUsd": "0",
+  "changesBuildReservations": false,
+  "cloudActions": false
+}

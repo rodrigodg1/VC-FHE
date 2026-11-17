@@ -1,0 +1,5 @@
+# Component-only Besu network. The full threshold campaign is launched on
+# the host from the repository root with ./run-poc.sh. This Compose file
+# does not execute FHE, KMS or the campaign controller.
+include:
+  - path: validators-besu/docker-compose.besu.yml

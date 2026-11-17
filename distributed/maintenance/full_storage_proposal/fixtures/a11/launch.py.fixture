@@ -1,0 +1,505 @@
+"""Explicit future cloud execution. Offline commands never import or call launch().
+
+One launch owns one new distributed lineage. An interrupted or failed launch is
+retained, never resumed by replaying requests. Existing local policy is untouched.
+"""
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime,timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import time
+import budget
+import configure
+import deployment
+import gcp
+from remote import Remote,command
+import topology
+
+PUBLIC_KEYSET_EXPORT_SCRIPT = r'''
+import json,re,sys
+from pathlib import Path
+root=Path(sys.argv[1])
+if root.is_symlink() or not root.is_dir():raise ValueError('keyset root must be a real directory')
+top={'ready.json','prss.json','encryption-key.bin','evaluation-key.bin','keyset.json','keyset_descriptor.json'}
+required={'ready.json','prss.json','encryption-key.bin','evaluation-key.bin'}
+public_types={'VerfKey','VerfAddress','PublicKey','CompressedXofKeySet'}
+files=[]
+for entry in sorted(root.iterdir()):
+ if entry.is_symlink():raise ValueError('symlink in keyset root')
+ if entry.name=='CLIENT':
+  if not entry.is_dir():raise ValueError('CLIENT must remain a local directory')
+  continue
+ if entry.name in top:
+  if not entry.is_file():raise ValueError('public keyset file must be regular')
+  files.append('keyset/'+entry.name)
+ elif re.fullmatch(r'PUB-p[1-4]',entry.name):
+  if not entry.is_dir():raise ValueError('public party prefix must be a directory')
+  for kind in sorted(entry.iterdir()):
+   if kind.is_symlink():raise ValueError('symlink in public party prefix')
+   if kind.name=='tls.pem' and kind.is_file():
+    files.append('keyset/'+str(kind.relative_to(root)));continue
+   if kind.name not in public_types or not kind.is_dir():raise ValueError('unknown or private public-store category')
+   for value in sorted(kind.iterdir()):
+    if value.is_symlink() or not value.is_file():raise ValueError('public object must be a regular nonsymlink file')
+    if not re.fullmatch(r'[0-9a-fA-F]{64}',value.name):raise ValueError('unknown public object name')
+    files.append('keyset/'+str(value.relative_to(root)))
+ else:raise ValueError('unknown or private keyset root entry')
+if not required<={Path(p).name for p in files if p.count('/')==1}:raise ValueError('incomplete public keyset')
+print(json.dumps(files))
+'''
+
+HERE=Path(__file__).resolve().parent
+ROOT=HERE.parent
+def write(path,value):
+    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
+    temporary=path.with_name(path.name+'.pending')
+    with temporary.open('x') as file:json.dump(value,file,indent=2);file.write('\n');file.flush();os.fsync(file.fileno())
+    temporary.replace(path)
+def parallel(items,fn):
+    with ThreadPoolExecutor(max_workers=4) as pool:return list(pool.map(fn,items))
+def check_launch(config,quote,build,*,elapsed_hours=0):
+    topology.validate(config)
+    if config['project_id']=='replace-with-your-project-id':raise ValueError('set the actual dedicated GCP project')
+    if config['layout']!='four-hosts':raise ValueError('the USD 50 launcher supports the four-host profile only')
+    if config.get('execution_mode')=='smoke' and not config['campaign'].endswith('-smoke'):
+        raise ValueError('use a separate campaign name ending in -smoke to preserve evaluation host state')
+    if not all(config['images'].values()):raise ValueError('pin both published Docker image digests before launch')
+    allowance=quote.get('case_allowance_hours')
+    if type(allowance) not in (int,float) or not 0<allowance<float(quote['planned_hours']):
+        raise ValueError('quote must reserve time for a complete in-flight case')
+    build=Path(build).resolve()
+    record=json.loads((build/'distributed-source.json').read_text())
+    module=deployment.campaign_module()
+    if record['localSource']!=module.source_manifest():raise ValueError('image inputs differ from current protocol sources')
+    from image import verify_adapter_sources
+    verify_adapter_sources(record)
+    receipt=json.loads((build/'published-image.json').read_text())
+    if receipt.get('digest')!=config['images']['campaign'] or receipt.get('sourceSha256')!=topology.digest(record):
+        raise ValueError('image publication receipt differs from prepared sources')
+    if receipt.get('besuDigest') and receipt['besuDigest']!=config['images']['besu']:
+        raise ValueError('Besu image differs from the source-bound cloud build receipt')
+    costs=budget.assess(config,quote,elapsed_hours=elapsed_hours)
+    if costs['status']!='admit':raise ValueError('complete campaign exceeds the available budget: '+json.dumps(costs))
+    return record,costs
+
+class Campaign:
+    def __init__(self,config,quote,build,run):
+        self.config,self.quote,self.build=config,quote,Path(build)
+        self.record,self.costs=check_launch(config,quote,build)
+        from controller_inputs import prepare
+        self.input_evidence=prepare()
+        self.run=Path(run).resolve()
+        if self.run.parent!=ROOT/'threshold-kms/runs':raise ValueError('run must be a new direct threshold-kms/runs child')
+        if self.run.exists():raise ValueError('existing run is preserved. Automatic resume is not permitted')
+        self.plan=topology.plan(config);self.nodes={n['id']:n for n in self.plan['nodes']}
+        self.remotes={h['id']:Remote(config,h) for h in self.plan['hosts']}
+        self.compose=deployment.manifests(config,self.run.name)
+        self.base='/srv/vcfhe/'+config['campaign']
+        self.started=time.monotonic();self.provisioned=False
+        for remote in self.remotes.values():
+            remote.read_deadline=self.started+float(self.quote['planned_hours'])*3600
+        self.state={'schema':'vcfhe-distributed-launch-v1','status':'prepared','stages':[],
+                    'config':config,'createdAt':datetime.now(timezone.utc).isoformat()}
+    def remote(self,node):return self.remotes[self.nodes[node]['host']]
+    def root(self,node):return self.nodes[node]['state_directory']
+    def compose_args(self,node,*args):
+        host=self.nodes[node]['host']
+        return ['sudo','docker','compose','-f',self.base+'/'+host+'/compose.json',*args]
+    def compose_run(self,node,*args,**kwargs):return self.remote(node).run(self.compose_args(node,*args),**kwargs)
+    def stage(self,name,fn):
+        print('DISTRIBUTED PHASE '+name,flush=True)
+        entry={'name':name,'status':'running','startedAt':datetime.now(timezone.utc).isoformat()}
+        self.state['stages'].append(entry);write(self.run/'launch-state.json',self.state)
+        start=time.monotonic()
+        try:
+            result=fn();entry['status']='passed';return result
+        except BaseException:
+            entry['status']='failed';raise
+        finally:
+            entry['seconds']=time.monotonic()-start;write(self.run/'launch-state.json',self.state)
+    def initialize(self):
+        self.run.mkdir(parents=True,mode=0o700)
+        import preserve
+        preserve.preserve(self.run/'preserved-local-publication')
+        write(self.run/'distributed-config.json',self.config)
+        write(self.run/'distributed/budget.json',self.costs)
+        write(self.run/'distributed/quote.json',self.quote)
+        write(self.run/'distributed/source.json',self.record)
+        write(self.run/'distributed/controller-inputs.json',self.input_evidence)
+        gcp.write(self.config,self.run/'terraform')
+    def provision(self):
+        for tool in ['gcloud','terraform']:
+            if not shutil.which(tool):raise ValueError('missing prerequisite: '+tool)
+        directory=self.run/'terraform'
+        command(['terraform','-chdir='+str(directory),'init','-input=false'])
+        command(['terraform','-chdir='+str(directory),'validate'])
+        # image-push creates this repository before VMs are billed. Import its
+        # exact identity into this new Terraform state, never recreate it.
+        registry=f'projects/{self.config["project_id"]}/locations/{topology.registry_region(self.config)}/repositories/{gcp.image_repository(self.config)}'
+        command(['terraform','-chdir='+str(directory),'import','-input=false',
+                 'google_artifact_registry_repository.images',registry])
+        if self.config.get('primary_first_provision',False):
+            print('DISTRIBUTED PROVISION host-1 capacity admission before remaining hosts',flush=True)
+            command(['terraform','-chdir='+str(directory),'plan','-input=false',
+                     '-target=google_compute_instance.host_1','-out=primary.tfplan'])
+            check_launch(self.config,self.quote,self.build)
+            self.provisioned=True
+            command(['terraform','-chdir='+str(directory),'apply','-input=false','primary.tfplan'])
+        command(['terraform','-chdir='+str(directory),'plan','-input=false','-out=launch.tfplan'])
+        # Costs and sources are checked again immediately before the first VM action.
+        if self.config.get('primary_first_provision',False):
+            check_launch(self.config,self.quote,self.build,elapsed_hours=(time.monotonic()-self.started)/3600)
+        else:check_launch(self.config,self.quote,self.build)
+        self.provisioned=True
+        command(['terraform','-chdir='+str(directory),'apply','-input=false','launch.tfplan'])
+        write(self.run/'terraform-output.json',json.loads(subprocess.check_output(
+            ['terraform','-chdir='+str(directory),'output','-json'],text=True)))
+    def bootstrap(self):
+        def host_ready(remote):
+            deadline=time.monotonic()+1200
+            while True:
+                try:
+                    remote.run(['sudo','docker','info'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+                    remote.run(['mountpoint','-q','/srv/vcfhe'])
+                    break
+                except subprocess.CalledProcessError:
+                    if time.monotonic()>deadline:raise
+                    time.sleep(10)
+            for node in self.plan['nodes']:
+                if node['host']!=remote.host['id']:continue
+                dirs=['config','identity','transport','reports','fixtures','keyset','release-evidence','exchange','worker-rpc',
+                      'owner','owner-rpc','datasets','recipient','private','public','policy-state','chain']
+                # Refuse to reuse even an interrupted role directory. No identity/budget reset.
+                remote.run(['sudo','test','!','-e',node['state_directory']])
+                remote.run(['sudo','install','-d','-o','10001','-g','10001','-m','700',
+                            *[node['state_directory']+'/'+d for d in dirs]])
+            # Short-lived VM service-account token goes directly to Docker stdin.
+            registry=self.config['images']['campaign'].split('/')[0]
+            import shlex
+            script="set -eu\ncurl -fsS -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token | python3 -c 'import json,sys;print(json.load(sys.stdin)[\"access_token\"])' | sudo docker login -u oauth2accesstoken --password-stdin "+shlex.quote(registry)
+            remote.shell(script,stdout=subprocess.DEVNULL)
+            for image in self.config['images'].values():
+                for attempt in range(3):
+                    try:
+                        remote.run(['sudo','docker','pull',image],timeout=900);break
+                    except (subprocess.CalledProcessError,subprocess.TimeoutExpired):
+                        if attempt==2:raise
+                        time.sleep(5*(attempt+1))
+        parallel(self.remotes.values(),host_ready)
+    def enrollment(self):
+        def enroll(item):
+            name,node=item
+            folder=self.run/'enrollment'/name
+            write(folder/'enrollment.json',{'node':name,'host':node['host'],'private_ip':node['private_ip']})
+            remote=self.remote(name);root=self.root(name)
+            remote.upload(folder,root+'/config')
+            public=remote.json(['sudo','docker','run','--rm','--network','none','--user','10001:10001',
+                '--mount',f'type=bind,src={root}/config,dst=/config,readonly',
+                '--mount',f'type=bind,src={root}/identity,dst=/identity','--entrypoint','node',
+                self.config['images']['campaign'],'/app/distributed/enroll.mjs'])
+            return name,public
+        identities=dict(parallel(self.nodes.items(),enroll))
+        write(self.run/'distributed/public-identities.json',identities)
+        self.identities=identities
+    def sampling(self):
+        import shlex,math
+        for host,r in self.remotes.items():
+            folder=self.run/'sampler'/host;write(folder/'plan.json',self.plan)
+            shutil.copy2(HERE/'probe.py',folder/'probe.py')
+            remote=self.base+'/'+host
+            r.upload(folder,remote)
+            args=['python3',remote+'/probe.py','--plan',remote+'/plan.json','--host',host,
+                '--output',remote+'/host-observations.jsonl','--samples',str(math.ceil(float(self.quote['planned_hours'])*240)+1),
+                '--interval','15','--network','--stop-file',remote+'/stop-sampler']
+            script='nohup '+shlex.join(args)+' >'+shlex.quote(remote+'/probe.log')+' 2>&1 </dev/null &'
+            r.run(['sudo','sh','-c',script])
+    def validators(self):
+        folder=self.run/'network';folder.mkdir()
+        write(folder/'validators.json',sorted(self.identities[f'validator-{i}']['address'].lower() for i in range(1,5)))
+        remote=self.remote('validator-1');remote.upload(folder,self.base+'/network')
+        extra=remote.text(['sudo','docker','run','--rm','--network','none','--user','10001:10001',
+            '--mount',f'type=bind,src={self.base}/network,dst=/network,readonly',
+            self.config['images']['besu'],'rlp','encode','--from=/network/validators.json','--type=QBFT_EXTRA_DATA'])
+        import re
+        candidates=re.findall(r'0x[0-9a-fA-F]{100,}',extra)
+        if len(candidates)!=1:raise ValueError('could not decode Besu QBFT extraData output')
+        genesis={'config':{'chainId':46853,'berlinBlock':0,'londonBlock':0,'zeroBaseFee':True,
+                           'qbft':{'blockperiodseconds':2,'epochlength':30000,'requesttimeoutseconds':8}},
+            'nonce':'0x0','timestamp':'0x0','extraData':candidates[0],'gasLimit':'0x1fffffffffffff',
+            'difficulty':'0x1','mixHash':'0x63746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365',
+            'coinbase':'0x0000000000000000000000000000000000000000',
+            'alloc':{p['address'].removeprefix('0x'):{'balance':'0x84595161401484a000000'} for p in self.identities.values()}}
+        enodes=[f'enode://{self.identities[n]["publicKey"][4:]}@{self.nodes[n]["private_ip"]}:30303' for n in self.nodes if n.startswith('validator-')]
+        for i in range(1,5):
+            name=f'validator-{i}';directory=self.run/'validator-config'/name
+            write(directory/'genesis.json',genesis);write(directory/'static-nodes.json',enodes)
+            self.remote(name).upload(directory,self.root(name)+'/config')
+        for host,manifest in self.compose.items():
+            directory=self.run/'compose'/host;write(directory/'compose.json',manifest)
+            self.remotes[host].upload(directory,self.base+'/'+host)
+        parallel(range(1,5),lambda i:self.compose_run(f'validator-{i}','up','-d',f'validator-{i}'))
+        request=json.dumps({'jsonrpc':'2.0','id':1,'method':'eth_getBlockByNumber','params':['0x0',False]})
+        deadline=time.monotonic()+300;hashes=[]
+        while time.monotonic()<deadline:
+            try:
+                hashes=[self.remote(f'validator-{i}').json(['curl','-fsS','-H','Content-Type: application/json',
+                    '--data',request,'http://127.0.0.1:8545'])['result']['hash'] for i in range(1,5)]
+                if len(set(hashes))==1:break
+            except (subprocess.CalledProcessError,KeyError,TypeError):pass
+            time.sleep(2)
+        else:raise ValueError('four validators did not agree on genesis')
+        configure.render(self.config,self.identities,hashes[0],self.run/'participant-config',self.run.name)
+        if not isinstance(self.quote.get('case_allowance_hours'),(int,float)) or self.quote['case_allowance_hours']<=0:
+            raise ValueError('quote must reserve time for a complete in-flight case')
+        fixed=sum(float(self.quote[k]) for k in ['build_registry','retained_resources','transfer_storage_upper_bound'])
+        fixed+=float(budget.amount(self.quote.get('prior_experiment_upper_bound_usd',0)))
+        write(self.run/'participant-config/coordinator-1/budget-runtime.json',{
+            'startedAt':self.state['createdAt'],'plannedHours':float(self.quote['planned_hours']),
+            'caseAllowanceHours':self.quote['case_allowance_hours'],'hourlyUsd':float(self.costs['hourly_usd']),
+            'fixedUpperUsd':fixed,'reserveUsd':self.config['budget']['reserve'],
+            'maximumUsd':self.config['budget']['maximum'],'minimumFreeBytes':10*2**30})
+        parallel([name for name in self.nodes if not name.startswith('validator-')],
+            lambda name:self.remote(name).upload(self.run/'participant-config'/name,self.root(name)+'/config'))
+    def policy(self):
+        self.compose_run('coordinator-1','run','--rm','policy-init')
+        self.remote('coordinator-1').download(self.root('coordinator-1'),['config/release-policy.json'],self.run/'policy-public')
+        parallel([name for name in self.nodes if not name.startswith('validator-')],
+            lambda name:self.remote(name).upload(self.run/'policy-public/config/release-policy.json',self.root(name)+'/config'))
+    def kms(self):
+        parallel(range(1,5),lambda i:self.compose_run(f'kms-{i}','up','-d',f'kms-{i}-core',f'kms-{i}-public'))
+        # Exchange only the public TLS certificates generated beside each core.
+        for i in range(1,5):
+            name=f'kms-{i}';deadline=time.monotonic()+180
+            while True:
+                try:
+                    text=self.remote(name).text(['sudo','cat',self.root(name)+f'/public/PUB-p{i}/tls.pem']);break
+                except subprocess.CalledProcessError:
+                    if time.monotonic()>deadline:raise
+                    time.sleep(1)
+            path=self.run/'public-tls'/f'PUB-p{i}'/'tls.pem';path.parent.mkdir(parents=True);path.write_text(text+'\n')
+        parallel(range(1,5),lambda i:self.remote(f'kms-{i}').upload(self.run/'public-tls',self.root(f'kms-{i}')+'/public'))
+        # A generated certificate does not imply that kms-server has bound its
+        # client and MPC listeners. kms-init does not retry initial connections.
+        # Retry only these read-only probes, never PRSS or another MPC action.
+        probe='import json,socket,sys\nfor address in json.loads(sys.argv[1]):\n for port in (50001,50100):\n  with socket.create_connection((address,port),timeout=2):pass'
+        addresses=json.dumps([self.nodes[f'kms-{i}']['private_ip'] for i in range(1,5)])
+        deadline=time.monotonic()+300
+        while True:
+            try:
+                self.remote('coordinator-1').run(['python3','-c',probe,addresses],
+                    timeout=30,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+                break
+            except (subprocess.CalledProcessError,subprocess.TimeoutExpired):
+                if time.monotonic()>=deadline:
+                    raise ValueError('four KMS client and MPC endpoints did not become ready before PRSS')
+                time.sleep(2)
+        self.compose_run('coordinator-1','run','--rm','init')
+        self.compose_run('coordinator-1','run','--rm','setup')
+        # Keep the SDK CLIENT identity local to the coordinator. Inspect names
+        # only, then export the explicit public selection rather than the tree.
+        public_paths=self.remote('coordinator-1').json(['sudo','python3','-c',PUBLIC_KEYSET_EXPORT_SCRIPT,
+            self.root('coordinator-1')+'/keyset'])
+        self.remote('coordinator-1').download(self.root('coordinator-1'),public_paths,self.run/'setup-public')
+        ready=json.loads((self.run/'setup-public/keyset/ready.json').read_text())
+        if ready.get('status')!='passed' or not ready.get('fullPreprocessing') or ready.get('preloadedFheKey'):
+            raise ValueError('actual threshold setup incomplete')
+        parallel([name for name in self.nodes if not name.startswith('validator-') and name!='coordinator-1'],
+            lambda name:self.remote(name).upload(self.run/'setup-public/keyset',self.root(name)+'/keyset'))
+    def roles(self):
+        from controller_inputs import prepare
+        if prepare()!=self.input_evidence:raise ValueError('dataset preparation changed before protocol start')
+        self.datasets=self.input_evidence['datasets']
+        datasets=self.run/'dataset-transfer'
+        for name in self.datasets:
+            source=ROOT/name
+            # The original owner expects /datasets/stav360 and /datasets/qoe.
+            target=datasets/('stav.csv' if 'Raw_Ratings' in name else 'qoe/'+Path(name).name)
+            target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
+        shutil.copy2(ROOT/'datasets/outputs/linear-inputs.json',datasets/'linear.json')
+        parallel(range(1,5),lambda i:self.remote(f'owner-{i}').upload(datasets,self.root(f'owner-{i}')+'/datasets'))
+        for host,manifest in self.compose.items():
+            names=[n['id'] for n in self.plan['nodes'] if n['host']==host and n['role']!='validator']
+            self.remotes[host].run(['sudo','docker','compose','-f',self.base+'/'+host+'/compose.json','up','-d',*names])
+        self.compose_run('coordinator-1','run','--rm','--no-deps','--entrypoint','node','coordinator-1',
+            '/app/fhe-pod/scripts/evaluate-committee-availability.mjs','--output-dir','/reports/committee-availability')
+        self.compose_run('coordinator-1','exec','-T','coordinator-1','node','/app/distributed/health.mjs')
+        for name in ['owner-1','owner-2','owner-3','owner-4','recipient-1','coordinator-1']:
+            marker=self.root(name)+'/config/start-role.json'
+            self.remote(name).run(['sudo','touch',marker])
+            self.remote(name).run(['sudo','chown','10001:10001',marker])
+    def wait(self):
+        # Observation reads never repeat an actor task, release or transaction.
+        deadline = self.started + float(self.quote['planned_hours']) * 3600
+        unavailable = object()
+
+        def remaining():
+            value = deadline - time.monotonic()
+            if value <= 0:
+                raise ValueError('planned infrastructure duration exhausted. Preserve incomplete evidence')
+            return value
+
+        def read_json(remote, args):
+            try:
+                result = remote.run(args, stdout=subprocess.PIPE, text=True,
+                                    timeout=min(45, remaining()))
+                value = json.loads(result.stdout)
+            except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired,
+                    json.JSONDecodeError, UnicodeError):
+                remaining()
+                return unavailable
+            remaining()
+            return value
+
+        def accept_exit(value, node, role):
+            if (not isinstance(value, dict) or value.get('node') != node
+                    or value.get('role') != role or type(value.get('exitCode')) is not int):
+                raise ValueError('malformed or misassigned participant exit record')
+            if value['exitCode'] != 0:
+                raise ValueError('distributed participant failed. Releases and tasks will not be retried')
+
+        node = 'coordinator-1'
+        remote = self.remote(node)
+        root = self.root(node)
+        recipient_node = 'recipient-1'
+        recipient_remote = self.remote(recipient_node)
+        recipient_args = ['sudo', 'cat', self.root(recipient_node) + '/reports/participant-exit.json']
+        recipient_finished = False
+        while True:
+            # Recipient failure must not remain hidden behind a coordinator
+            # that is still waiting for the recipient's output file.
+            if not recipient_finished:
+                recipient = read_json(recipient_remote, recipient_args)
+                if recipient is not unavailable:
+                    accept_exit(recipient, recipient_node, 'recipient')
+                    recipient_finished = True
+            try:
+                self.compose_run(node, 'logs', '--no-color', '--tail', '8', node,
+                                 timeout=min(45, remaining()))
+            except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                remaining()
+            progress = read_json(remote, ['sudo', 'tail', '-n', '1', root + '/reports/progress-evaluation.jsonl'])
+            if isinstance(progress, dict) and 'observedAt' not in progress:
+                try:
+                    write(self.run / 'live-progress.local.json',
+                          dict(observedAt=datetime.now(timezone.utc).isoformat(), **progress))
+                    print('WORKFLOW PROGRESS ' + json.dumps(progress), flush=True)
+                except (OSError, ValueError, TypeError):
+                    # Host-side progress is observation only. Exit validation
+                    # below is deliberately outside this exception handler.
+                    pass
+            result = read_json(remote, ['sudo', 'cat', root + '/reports/participant-exit.json'])
+            if result is not unavailable:
+                # Validation stays outside the transport-read exception handler.
+                # A real nonzero exit or a wrong role cannot become a retry.
+                accept_exit(result, node, 'coordinator')
+                break
+            time.sleep(min(30, remaining()))
+
+        if recipient_finished:
+            return
+        while True:
+            result = read_json(recipient_remote, recipient_args)
+            if result is not unavailable:
+                accept_exit(result, recipient_node, 'recipient')
+                return
+            time.sleep(min(2, remaining()))
+
+    def collect(self):
+        from collect import collect
+        collect(self)
+    def stop(self):
+        # Keep identity volumes, ciphertexts, cumulative counters and chain disks.
+        outcomes=[]
+        for remote in self.remotes.values():
+            for attempt in range(3):
+                try:
+                    command(['gcloud','compute','instances','stop',remote.host['name'],'--zone',remote.host['zone'],
+                             '--project',self.config['project_id'],'--quiet']);outcomes.append({'host':remote.host['id'],'stopped':True});break
+                except subprocess.CalledProcessError:
+                    if attempt==2:outcomes.append({'host':remote.host['id'],'stopped':False})
+                    else:time.sleep(5)
+        # Delete only this experiment's transient NAT assignments. Stopped VM
+        # state, identities and disks remain. A later launch requires new state.
+        for i,region in enumerate(self.config['regions'],1):
+            try:
+                command(['gcloud','compute','routers','nats','delete',self.config['campaign']+f'-nat{i}',
+                    '--router',self.config['campaign']+f'-r{i}','--region',region['name'],
+                    '--project',self.config['project_id'],'--quiet'])
+            except subprocess.CalledProcessError:pass
+        write(self.run/'compute-stop.local.json',{'hosts':outcomes,'stateDisksPreserved':True,
+            'vmRuntimeBoundSeconds':self.config.get('maximum_vm_runtime_seconds',50400)})
+        if not all(item['stopped'] for item in outcomes):
+            print('ATTENTION: Some stop requests failed. The Compute Engine duration bound remains active. Inspect compute-stop.local.json.',flush=True)
+    def run_all(self):
+        self.initialize()
+        try:
+            for name,fn in [('GCP provisioning',self.provision),('Docker and private state',self.bootstrap),
+                ('Host and network sampling',self.sampling),
+                ('Local participant identities',self.enrollment),('QBFT validators and public configuration',self.validators),
+                ('Exact-release policy',self.policy),('Four-core PRSS, preprocessing and DKG',self.kms),
+                ('Owner encryption and protocol participants',self.roles),('Full evaluation',self.wait),
+                ('Collect and validate evidence',self.collect)]:self.stage(name,fn)
+            self.state['status']='completed'
+            self.state['evaluationStatus']='not-applicable-smoke' if self.config.get('execution_mode')=='smoke' else 'pending-publication'
+        except BaseException as error:
+            self.state['status']='failed';self.state['error']=str(error)
+            if self.provisioned:
+                for host,remote in self.remotes.items():
+                    try:
+                        with (self.run/(host+'-failure.log')).open('w') as log:
+                            remote.run(['sudo','docker','compose','-f',self.base+'/'+host+'/compose.json',
+                                        'logs','--no-color','--tail','200'],stdout=log,stderr=subprocess.STDOUT)
+                    except (OSError,subprocess.CalledProcessError):pass
+            raise
+        finally:
+            write(self.run/'launch-state.json',self.state)
+            if self.provisioned:
+                cleanup_error=None
+                backup_directory=self.run/'private-smoke-backup'
+                if self.config.get('execution_mode')=='smoke':
+                    try:
+                        from smoke_cleanup import backup
+                        self.stage('Preserve private smoke state before resource removal',
+                                   lambda:backup(self.config,self.run,backup_directory,
+                                                 allow_failed=self.state['status']=='failed'))
+                    except BaseException as error:
+                        cleanup_error=error
+                        write(self.run/'smoke-cleanup-failure.local.json',
+                              {'stage':'private backup','error':str(error),'resourcesDeleted':False})
+                try:self.stop()
+                finally:
+                    if self.config.get('execution_mode')=='smoke' and cleanup_error is None:
+                        try:
+                            from smoke_cleanup import apply
+                            self.stage('Remove backed-up smoke infrastructure',
+                                       lambda:apply(self.config,self.run,backup_directory,
+                                                    allow_failed=self.state['status']=='failed'))
+                        except BaseException as error:
+                            cleanup_error=error
+                            write(self.run/'smoke-cleanup-failure.local.json',
+                                  {'stage':'resource removal','error':str(error)})
+                if cleanup_error is not None:
+                    print('ATTENTION: Smoke cleanup requires inspection. Private state and cleanup diagnostics are retained.',flush=True)
+                    if sys.exc_info()[0] is None:
+                        self.state['status']='smoke-complete-cleanup-failed'
+                        write(self.run/'launch-state.json',self.state)
+                        raise ValueError('Smoke cleanup failed. Inspect smoke-cleanup-failure.local.json.') from cleanup_error
+        from publication import publish
+        if self.config.get('execution_mode')=='smoke':
+            return json.loads((self.run/'distributed/smoke-result.json').read_text())
+        try:
+            result=self.stage('Install validated cloud evaluation in evaluation',lambda:publish(self.run))
+            self.state['evaluationStatus']='published';self.state['evaluationSource']='cloud'
+            return result
+        except BaseException:
+            self.state['evaluationStatus']='postprocessing-failed'
+            self.state['status']='evaluation-complete-publication-failed'
+            raise
+        finally:write(self.run/'launch-state.json',self.state)
+
+def launch(config,quote,build,run):return Campaign(config,quote,build,run).run_all()

@@ -1,0 +1,13 @@
+group,size,metric,series,observations,sourceMean,sourceSampleSd,sourceMinimum,sourceMaximum,scale,plottedMean,plottedSampleSd
+regulatory_qoe_compliance-16,16,rewardAfterDisclosureAndGasWei,Challenger residual,3,1396000000000000000,0.0,1396000000000000000,1396000000000000000,1e+18,1.396,0.0
+regulatory_qoe_compliance-32,32,rewardAfterDisclosureAndGasWei,Challenger residual,3,1268000000000000000,0.0,1268000000000000000,1268000000000000000,1e+18,1.268,0.0
+regulatory_qoe_compliance-50,50,rewardAfterDisclosureAndGasWei,Challenger residual,3,1268000000000000000,0.0,1268000000000000000,1268000000000000000,1e+18,1.268,0.0
+regulatory_qoe_compliance-16,16,coalitionLossAfterDisclosureWei,Coalition settlement loss,3,1646000000000000000,0.0,1646000000000000000,1646000000000000000,1e+18,1.646,0.0
+regulatory_qoe_compliance-32,32,coalitionLossAfterDisclosureWei,Coalition settlement loss,3,1518000000000000000,0.0,1518000000000000000,1518000000000000000,1e+18,1.518,0.0
+regulatory_qoe_compliance-50,50,coalitionLossAfterDisclosureWei,Coalition settlement loss,3,1518000000000000000,0.0,1518000000000000000,1518000000000000000,1e+18,1.518,0.0
+regional_qoe_compliance-16,16,rewardAfterDisclosureAndGasWei,Challenger residual,3,1268000000000000000,0.0,1268000000000000000,1268000000000000000,1e+18,1.268,0.0
+regional_qoe_compliance-32,32,rewardAfterDisclosureAndGasWei,Challenger residual,3,1012000000000000000,0.0,1012000000000000000,1012000000000000000,1e+18,1.012,0.0
+regional_qoe_compliance-50,50,rewardAfterDisclosureAndGasWei,Challenger residual,3,500000000000000000,0.0,500000000000000000,500000000000000000,1e+18,0.5,0.0
+regional_qoe_compliance-16,16,coalitionLossAfterDisclosureWei,Coalition settlement loss,3,1518000000000000000,0.0,1518000000000000000,1518000000000000000,1e+18,1.518,0.0
+regional_qoe_compliance-32,32,coalitionLossAfterDisclosureWei,Coalition settlement loss,3,1262000000000000000,0.0,1262000000000000000,1262000000000000000,1e+18,1.262,0.0
+regional_qoe_compliance-50,50,coalitionLossAfterDisclosureWei,Coalition settlement loss,3,750000000000000000,0.0,750000000000000000,750000000000000000,1e+18,0.75,0.0

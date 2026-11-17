@@ -1,0 +1,164 @@
+[
+  {
+    "case": "linear-acr-10-0",
+    "segment": "c3",
+    "index": 0,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "linear-acr-10-49",
+    "segment": "c3",
+    "index": 1,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "linear-acr-10-99",
+    "segment": "c3",
+    "index": 2,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "linear-acr-16-0",
+    "segment": "c3",
+    "index": 3,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "linear-acr-16-49",
+    "segment": "c3",
+    "index": 4,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "linear-acr-16-99",
+    "segment": "c3",
+    "index": 5,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "linear-acr-27-0",
+    "segment": "c3",
+    "index": 6,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "linear-acr-27-49",
+    "segment": "c3",
+    "index": 7,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "linear-acr-27-99",
+    "segment": "c3",
+    "index": 8,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "regulatory_qoe_compliance-16-0",
+    "segment": "c3",
+    "index": 9,
+    "applicationSha256": "927bea3300b8528a206af2a58b02808a2d9402349f8fa4c634423a6f1e2be8b7"
+  },
+  {
+    "case": "regulatory_qoe_compliance-16-14",
+    "segment": "c4",
+    "index": 0,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regulatory_qoe_compliance-16-29",
+    "segment": "c4",
+    "index": 1,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regulatory_qoe_compliance-32-0",
+    "segment": "c4",
+    "index": 2,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regulatory_qoe_compliance-32-14",
+    "segment": "c4",
+    "index": 3,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regulatory_qoe_compliance-32-29",
+    "segment": "c4",
+    "index": 4,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regulatory_qoe_compliance-50-0",
+    "segment": "c4",
+    "index": 5,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regulatory_qoe_compliance-50-14",
+    "segment": "c4",
+    "index": 6,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regulatory_qoe_compliance-50-29",
+    "segment": "c4",
+    "index": 7,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-16-0",
+    "segment": "c4",
+    "index": 8,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-16-14",
+    "segment": "c4",
+    "index": 9,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-16-29",
+    "segment": "c4",
+    "index": 10,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-32-0",
+    "segment": "c4",
+    "index": 11,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-32-14",
+    "segment": "c4",
+    "index": 12,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-32-29",
+    "segment": "c4",
+    "index": 13,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-50-0",
+    "segment": "c4",
+    "index": 14,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-50-14",
+    "segment": "c4",
+    "index": 15,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  },
+  {
+    "case": "regional_qoe_compliance-50-29",
+    "segment": "c4",
+    "index": 16,
+    "applicationSha256": "fefac8cfa3c2132fcbaae3199514b276bad89000bb30eb96ce064547c5e789d2"
+  }
+]

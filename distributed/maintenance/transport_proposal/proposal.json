@@ -1,0 +1,15 @@
+{
+  "schema": "vcfhe-transport-proposal-v1",
+  "status": "unapplied-proposal",
+  "concurrencyPerProcess": 8,
+  "source": {
+    "client.mjs": "398bc4728e5322ae07e63ad197eb0e16296aaddff728d8587da3c43875d55a31",
+    "public-files.mjs": "6a3ddb3b2e95292757cb2f69027bf9c741f62e53d572386d69402e1734149b7f"
+  },
+  "candidate": {
+    "client.mjs": "1c3ca9df037d4e1e7b6ade4ad93b139fa416ffa2c3147900e6463c37b2e94040",
+    "public-files.mjs": "39d21639a03a4b95c37fb999e2e7248b5d972c85f75130bd3a37816ba71bf801"
+  },
+  "protocolChanges": false,
+  "cloudActions": false
+}

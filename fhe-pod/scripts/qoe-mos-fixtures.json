@@ -1,0 +1,38 @@
+{
+  "dataset": {
+    "id": "MOS_BS_DRIVETEST",
+    "citation": "5G-QoERA drive-test export (Boffetti et al., IEEE WCNC 2025; telematics-lab/5G-QoERA, GPL-3.0), converted to CSV with throughput and per-bitrate MOS columns; task supported by QoE prediction literature using in-device/network measurements.",
+    "sourceCsv": "VC-FHE/data/MOS_BS_1_Driver_PRB_10.csv",
+    "generatedAt": "2026-09-10T21:52:34.901Z",
+    "rowCount": 81091,
+    "sensitiveFieldsPresent": [
+      "User_ID",
+      "Timestamp",
+      "Latitude",
+      "Longitude",
+      "Tput"
+    ],
+    "label": "poor QoE when MOS <= 2"
+  },
+  "models": {
+    "bs1_3000kbps_poor_alarm": {
+      "baseStation": "BS_1",
+      "bitrateKbps": 3000,
+      "mosColumn": "MOS_3000kbps",
+      "mosPoorThresholdMilli": 2000,
+      "headroomPercent": 72,
+      "trainingRows": 81091,
+      "poorRows": 19358,
+      "correctRows": 81091,
+      "accuracyPermille": 1000,
+      "selectedRow": {
+        "rowNumber": 3,
+        "throughputKbps": 1928,
+        "observedMosMilli": 1000,
+        "observedPoor": 1
+      },
+      "model": "predictedPoor = (throughputKbps * 100) < (bitrateKbps * headroomPercent)",
+      "literatureTask": "QoE/MOS degradation classification from network-side or in-device measurements; implemented as deterministic quantized inference rather than private model training."
+    }
+  }
+}

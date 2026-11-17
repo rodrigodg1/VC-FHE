@@ -1,0 +1,9 @@
+{
+  "schema": "vcfhe-public-keyset-export-proposal-v1",
+  "status": "unapplied",
+  "sourceSha256": "aca6e141f53414bb99d6917355765be1b08e105d79342a9b136bb0b3f2d7c243",
+  "candidateSha256": "d8562b2566738f2f2395888d6e990d76ecdf0efffb4eaf190014d0442d29a0cf",
+  "coordinatorClientPreserved": true,
+  "protocolChanged": false,
+  "cloudActions": false
+}

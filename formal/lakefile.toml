@@ -1,0 +1,6 @@
+name = "vcfhe-proofs"
+version = "1.0.0"
+defaultTargets = ["VCFHE"]
+
+[[lean_lib]]
+name = "VCFHE"

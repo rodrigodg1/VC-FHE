@@ -1,0 +1,2565 @@
+<!DOCTYPE html>
+<!--
+  VC-FHE protocol explorer — read-only front end for the 4-validator Besu QBFT
+  network of the evaluation.
+
+  It adds nothing to the architecture: every call it makes is a read
+  (eth_*, net_*, qbft_*), it holds no keys, and it never sends a transaction.
+  What it adds over a generic explorer is the vocabulary of this protocol:
+
+    consensus   height, sealing state, block interval, proposer rotation,
+                peers, transaction pool
+
+    linear      MKLHSVerification / LHSVerification: owner key registration,
+                record admission, task registration, and the output-binding
+                ResultBound record the consumer checks off chain
+
+    non-linear  VerifiableFHEDisputeGame: task creation, participant sampling,
+                audit commit and open, bonded challenge, bisection rounds,
+                FHEVM leaf resolution, final decision and slashing
+
+  Live by push, not by polling. The page opens a WebSocket to the node and
+  subscribes to newHeads, to the protocol logs and to newPendingTransactions,
+  so a block appears when it is sealed and a transaction appears when it
+  reaches the pool. Every block is ingested exactly once, in order: the head
+  handler fills the gap between the last ingested block and the new head, so
+  nothing is skipped when several blocks arrive at once or after a
+  reconnection. If the WebSocket endpoint is absent or refused, the page falls
+  back on its own to incremental polling and says so in the header.
+
+  Contracts are discovered from the chain by event signature, so no address
+  list is required; network/deployment.<chainId>.json is used when present.
+
+  Colour: the two chart hues and the four status colours are the validated
+  dark-surface steps of the reference palette (blue #3987e5, aqua #199e70 on
+  surface #1a1a19). Status never carries meaning alone: every state ships with
+  an icon and a word.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>VC-FHE protocol explorer</title>
+<style>
+@layer tokens, base, layout, components, live, motion;
+
+@layer tokens {
+  :root {
+    --surface:#1a1a19; --panel:#212120; --line:#383835; --raise:#2b2b29;
+    --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#8f8e85;
+    --series-1:#3987e5;      /* categorical slot 1, dark step */
+    --series-2:#199e70;      /* categorical slot 3, dark step */
+    --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+    --r-s:6px; --r-m:9px; --r-l:12px;
+    --pad:14px;
+    --mono: ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    color-scheme: dark;
+  }
+  /* An animatable custom property: the flash that marks a row as just-arrived
+     is a single interpolated number, so it costs one compositor animation
+     instead of a class swap per frame. */
+  @property --flash { syntax:'<number>'; inherits:false; initial-value:0; }
+}
+
+@layer base {
+  * { box-sizing:border-box; }
+  html { scrollbar-gutter:stable; }
+  body { margin:0; background:var(--surface); color:var(--ink);
+         font:13.5px/1.55 var(--mono); accent-color:var(--series-1); }
+  h1,h2,h3 { text-wrap:balance; }
+  p, .why, .sub { text-wrap:pretty; }
+  input, button, select { background:var(--surface); color:var(--ink); border:1px solid var(--line);
+    border-radius:var(--r-s); padding:5px 9px; font:inherit; font-size:12.5px; }
+  button { cursor:pointer; transition:border-color .15s, background-color .15s, color .15s; }
+  button:hover { border-color:var(--series-1); background:color-mix(in oklab, var(--series-1) 12%, transparent); }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline:2px solid var(--series-1); outline-offset:2px; }
+  code { color:var(--series-2); }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); font-size:12px; vertical-align:top; }
+  th { color:var(--ink-3); font-weight:700; text-transform:uppercase; font-size:10px; letter-spacing:.6px; }
+  tr:last-child td { border-bottom:none; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  td.mono, .mono { color:var(--ink-2); }
+  .muted { color:var(--ink-3); }
+}
+
+@layer layout {
+  header { padding:10px 18px; border-bottom:1px solid var(--line);
+           background:color-mix(in oklab, var(--panel) 88%, transparent);
+           backdrop-filter:blur(8px);
+           display:flex; flex-wrap:wrap; gap:10px; align-items:center; position:sticky; top:0; z-index:5; }
+  header h1 { font-size:14px; margin:0; letter-spacing:.3px; font-weight:700; }
+  header .sp { flex:1; }
+  header details { position:relative; }
+  header details > summary { list-style:none; cursor:pointer; border:1px solid var(--line);
+    border-radius:var(--r-s); padding:5px 9px; font-size:12.5px; color:var(--ink-2); }
+  header details > summary::-webkit-details-marker { display:none; }
+  header details[open] > summary { border-color:var(--series-1); color:var(--series-1); }
+  header details > .sheet { position:absolute; right:0; top:calc(100% + 6px); z-index:9;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--r-m);
+    padding:12px; display:grid; gap:9px; min-width:330px;
+    box-shadow:0 14px 34px rgb(0 0 0 / .55); }
+  header details > .sheet label { display:grid; gap:4px; color:var(--ink-3); font-size:11px; }
+  main { padding:16px 18px 60px; max-width:1560px; margin:0 auto; }
+  /* min(430px, 100%) rather than a bare 430px: a bare track minimum is not
+     allowed to shrink below itself, so on a narrow screen the grid would be
+     wider than its container and the page would scroll sideways. */
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(430px,100%),1fr)); gap:14px; }
+  .grid-live { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:14px; margin-bottom:14px; }
+  @media (max-width:900px) { .grid-live { grid-template-columns:1fr; } }
+  section { display:none; } section.on { display:block; }
+  footer { color:var(--ink-3); font-size:11.5px; padding:16px 18px; border-top:1px solid var(--line); }
+}
+
+@layer components {
+  .hero { background:var(--panel); border:1px solid var(--line); border-radius:var(--r-l);
+          padding:var(--pad) 16px; margin-bottom:14px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .hero .state { font-size:26px; font-weight:700; letter-spacing:.5px; display:flex; align-items:center; gap:10px; }
+  .hero .why { color:var(--ink-2); font-size:12.5px; max-width:820px; }
+
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:16px; }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:var(--r-m); padding:10px 12px;
+          container-type:inline-size; }
+  .tile .k { color:var(--ink-3); font-size:10.5px; text-transform:uppercase; letter-spacing:.7px; }
+  .tile .v { font-size:22px; margin-top:3px; font-variant-numeric:tabular-nums; }
+  .tile .s { color:var(--ink-2); font-size:11px; }
+  @container (max-width: 150px) { .tile .v { font-size:18px; } }
+
+  nav { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  nav button { padding:6px 12px; }
+  nav button.on { border-color:var(--series-1); color:var(--series-1);
+                  background:color-mix(in oklab, var(--series-1) 14%, transparent); }
+
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:var(--r-l);
+          padding:var(--pad) 16px; margin-bottom:14px; }
+  .card > h2 { margin:0 0 2px; font-size:13px; font-weight:700; letter-spacing:.2px; color:var(--ink); text-transform:none; }
+  .card > .sub { color:var(--ink-3); font-size:11.5px; margin-bottom:12px; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:var(--ink-3);
+       margin:20px 0 8px; font-weight:700; }
+
+  .pill { display:inline-flex; align-items:center; gap:5px; padding:1px 8px; border-radius:999px;
+          font-size:11px; border:1px solid; white-space:nowrap; }
+  .p-good{color:var(--good);border-color:var(--good);} .p-warn{color:var(--warning);border-color:var(--warning);}
+  .p-bad{color:var(--critical);border-color:var(--critical);} .p-ser{color:var(--serious);border-color:var(--serious);}
+  .p-lin{color:var(--series-1);border-color:var(--series-1);} .p-non{color:var(--series-2);border-color:var(--series-2);}
+  .p-dim{color:var(--ink-3);border-color:var(--line);}
+
+  .phases { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  .phase { border:1px solid var(--line); border-radius:7px; padding:4px 9px; font-size:11.5px;
+           color:var(--ink-3); display:flex; align-items:center; gap:6px; }
+  .phase .n { font-size:10px; color:var(--ink-3); }
+  .phase.done { color:var(--ink); border-color:var(--good); }
+  .phase.now  { color:var(--ink); border-color:var(--series-1); box-shadow:0 0 0 1px var(--series-1) inset; }
+  .phase.bad  { color:var(--critical); border-color:var(--critical); }
+
+  .strip { display:flex; gap:2px; flex-wrap:wrap; margin-top:6px; }
+  .cell { width:22px; height:22px; border-radius:4px; background:var(--raise); color:var(--ink-2);
+          font-size:10px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line); }
+  .cell.last { border-color:var(--series-1); color:var(--ink); }
+
+  .meter { height:10px; background:var(--raise); border-radius:5px; overflow:hidden; margin:6px 0 4px; }
+  .meter > i { display:block; height:100%; background:var(--series-1); transition:width .4s ease; }
+
+  #tip { position:fixed; pointer-events:none; background:#0f0f0e; border:1px solid var(--line);
+         border-radius:7px; padding:7px 9px; font-size:12px; display:none; z-index:50; min-width:130px; }
+  #tip .val { font-size:15px; font-weight:700; }
+  #tip .lbl { color:var(--ink-3); font-size:11px; }
+  #err { background:#3a1614; border:1px solid var(--critical); color:#ffb4ae; padding:9px 12px;
+         border-radius:7px; margin-bottom:12px; display:none; white-space:pre-wrap; }
+  .rowbtn { float:right; font-size:11px; padding:2px 8px; }
+}
+
+@layer live {
+  /* connection state, always word + icon, never colour alone */
+  .link { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px;
+          border:1px solid var(--line); font-size:11.5px; color:var(--ink-2); }
+  .link .beat { width:8px; height:8px; border-radius:50%; background:var(--ink-3); flex:none; }
+  .link[data-mode="ws"]   { border-color:var(--good); color:var(--good); }
+  .link[data-mode="ws"] .beat   { background:var(--good); animation:beat 2s ease-in-out infinite; }
+  .link[data-mode="poll"] { border-color:var(--warning); color:var(--warning); }
+  .link[data-mode="poll"] .beat { background:var(--warning); }
+  .link[data-mode="down"] { border-color:var(--critical); color:var(--critical); }
+  .link[data-mode="down"] .beat { background:var(--critical); }
+  .link[data-mode="paused"] { border-color:var(--ink-3); color:var(--ink-3); }
+
+  /* The two live panels sit in one grid row, so the shorter card is
+     stretched to the height of the taller one. Their scrollers therefore have
+     to flex to whatever height the card ends up with: a fixed max-height left
+     dead space inside the shorter card. */
+  .card:has(> .stream), .card:has(> .txs), .card:has(> .feed) {
+    display:flex; flex-direction:column; max-height:min(78vh, 820px);
+  }
+  .card > .stream, .card > .txs, .card > .feed {
+    flex:1 1 auto; min-height:0; overflow:auto; scrollbar-gutter:stable;
+  }
+
+  /* live block stream ------------------------------------------------- */
+  .stream { display:grid; gap:7px; align-content:start; }
+  .blk { display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center;
+         border:1px solid var(--line); border-left:3px solid var(--series-1);
+         border-radius:var(--r-m); padding:8px 11px; background:var(--raise);
+         background-image:linear-gradient(90deg,
+           color-mix(in oklab, var(--series-1) calc(var(--flash) * 22%), transparent), transparent 60%); }
+  .blk .n { font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .blk .meta { color:var(--ink-3); font-size:11px; display:flex; gap:10px; flex-wrap:wrap; }
+  .blk .meta b { color:var(--ink-2); font-weight:400; }
+  .blk .when { color:var(--ink-3); font-size:11px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .blk.empty { border-left-color:var(--line); }
+  .blk .chip { border:1px solid var(--line); border-radius:999px; padding:0 7px; font-size:10.5px; color:var(--ink-2); }
+
+  /* transaction stream ------------------------------------------------ */
+  .txs { display:grid; gap:5px; align-content:start; }
+  .tx { display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:center;
+        border:1px solid var(--line); border-radius:var(--r-s); padding:6px 9px; font-size:11.5px;
+        background-image:linear-gradient(90deg,
+          color-mix(in oklab, var(--series-2) calc(var(--flash) * 20%), transparent), transparent 55%); }
+  .tx .hash { color:var(--ink-2); }
+  .tx .where { color:var(--ink-3); font-size:11px; white-space:nowrap; }
+  .tx[data-status="pending"] { border-color:color-mix(in oklab, var(--warning) 55%, var(--line)); }
+  .tx[data-status="mined"]   { border-color:color-mix(in oklab, var(--good) 45%, var(--line)); }
+  .tx[data-status="failed"]  { border-color:var(--critical); }
+  .tx a { color:inherit; }
+
+  .feed { display:grid; gap:0; align-content:start; }
+  .feed > div { padding:4px 0; border-bottom:1px solid var(--line); font-size:12px;
+    background-image:linear-gradient(90deg,
+      color-mix(in oklab, var(--series-1) calc(var(--flash) * 18%), transparent), transparent 55%); }
+  .feed > div:last-child { border-bottom:none; }
+
+  .headline { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .headline .count { color:var(--ink-3); font-size:11px; }
+}
+
+@layer motion {
+  @keyframes enter { from { opacity:0; transform:translateY(-10px) scaleY(.96); } to { opacity:1; transform:none; } }
+  @keyframes beat  { 0%,100% { opacity:1; } 50% { opacity:.28; } }
+  @keyframes fade  { from { --flash:1; } to { --flash:0; } }
+  .arrive { animation:enter .34s cubic-bezier(.2,.8,.2,1) both, fade 2.4s linear both; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration:.18s; }
+  @media (prefers-reduced-motion: reduce) {
+    .arrive { animation:fade 1.2s linear both; }
+    .link .beat { animation:none; }
+    *, *::before, *::after { transition-duration:.001ms !important; }
+  }
+}
+</style>
+</head>
+<body data-palette="#3987e5,#199e70">
+<header>
+  <h1>VC-FHE <span class="muted">protocol explorer</span></h1>
+
+  <span class="link" id="link" data-mode="down" role="status" aria-live="polite"
+        title="how the page is receiving updates">
+    <span class="beat"></span><span id="link-word">connecting…</span>
+  </span>
+
+  <label class="muted">window <select id="win">
+    <option value="30">30 blocks</option><option value="60" selected>60 blocks</option>
+    <option value="120">120 blocks</option></select></label>
+
+  <button id="pause" aria-pressed="false">pause</button>
+  <button id="reload">rescan history</button>
+
+  <details id="conn">
+    <summary>endpoints</summary>
+    <div class="sheet">
+      <label>JSON-RPC over HTTP<input id="rpc" size="30" /></label>
+      <label>WebSocket (push); empty disables it<input id="ws" size="30" /></label>
+      <label>scan history from block<input id="from" size="10" value="0" /></label>
+      <div class="muted" style="font-size:11px">
+        The WebSocket carries <code>eth_subscribe</code>. Without it the page polls
+        every 0.7 s and still ingests every block in order.
+      </div>
+    </div>
+  </details>
+
+  <span class="sp"></span>
+  <span id="clock" class="muted"></span>
+</header>
+
+<main>
+  <div id="err"></div>
+
+  <div class="hero">
+    <div class="state" id="h-state"><span>checking…</span></div>
+    <div class="why" id="h-why">Reading the chain.</div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><div class="k">height</div><div class="v" id="t-height">—</div><div class="s" id="t-height-s">&nbsp;</div></div>
+    <div class="tile"><div class="k">last block</div><div class="v" id="t-age">—</div><div class="s">seconds ago</div></div>
+    <div class="tile"><div class="k">block interval</div><div class="v" id="t-int">—</div><div class="s">median, window</div></div>
+    <div class="tile"><div class="k">validators</div><div class="v" id="t-vals">—</div><div class="s" id="t-peers">peers —</div></div>
+    <div class="tile"><div class="k">tx in window</div><div class="v" id="t-txs">—</div><div class="s" id="t-txrate">&nbsp;</div></div>
+    <div class="tile"><div class="k">pending pool</div><div class="v" id="t-pool">—</div><div class="s">queued transactions</div></div>
+    <div class="tile"><div class="k">ingested</div><div class="v" id="t-ing">—</div><div class="s" id="t-ing-s">blocks read in order</div></div>
+  </div>
+
+  <nav role="tablist" aria-label="views">
+    <button role="tab" aria-selected="true"  data-tab="live" class="on">live</button>
+    <button role="tab" aria-selected="false" data-tab="consensus">consensus</button>
+    <button role="tab" aria-selected="false" data-tab="linear">linear path</button>
+    <button role="tab" aria-selected="false" data-tab="nonlinear">non-linear path</button>
+    <button role="tab" aria-selected="false" data-tab="inspect">search / inspect</button>
+  </nav>
+
+  <!-- LIVE ------------------------------------------------------------- -->
+  <section id="s-live" class="on">
+    <div class="grid-live">
+      <div class="card">
+        <div class="headline">
+          <h2 style="margin:0">Blocks, as they are sealed</h2>
+          <span class="count" id="stream-count"></span>
+        </div>
+        <div class="sub">Newest first. Each block is read once, in order; a gap is
+          filled before the next one is shown, so the list never jumps.</div>
+        <div class="stream" id="stream" role="region" tabindex="0"
+             aria-label="blocks as they are sealed, newest first"></div>
+      </div>
+
+      <div class="card">
+        <div class="headline">
+          <h2 style="margin:0">Transactions, as they are sent</h2>
+          <span class="count" id="tx-count"></span>
+        </div>
+        <div class="sub">A transaction appears when it reaches the pool and changes
+          state when the block that carries it is sealed. Click a hash to inspect it.</div>
+        <div class="txs" id="txs" role="region" tabindex="0"
+             aria-label="transactions as they are sent, newest first"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>What is being computed and verified</h2>
+      <div class="sub">Read from the contracts with <code>eth_call</code>, not inferred. The
+        linear contracts carry their own description; the dispute game stores no workload
+        name, so the non-linear side reports what the chain does hold.</div>
+      <div id="whatcomputed" class="muted">reading the contracts…</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Transactions per block
+          <button class="rowbtn" data-table="c-tx">table</button></h2>
+        <div class="sub">How much work the campaign is putting on the chain. Long flat
+          stretches are normal: the protocol windows elapse in real time.</div>
+        <div id="c-tx"></div>
+      </div>
+      <div class="card">
+        <h2>Seconds between blocks
+          <button class="rowbtn" data-table="c-int">table</button></h2>
+        <div class="sub">QBFT seals every 2 s when a quorum of validators is connected.
+          Bars taller than 2 s mean the network is degrading; a very tall bar is a gap in
+          which the chain stopped sealing.</div>
+        <div id="c-int"></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>What the campaign is doing now</h2>
+        <div class="sub">Inferred from the events already on chain, not from the runner.</div>
+        <div id="whatnow"></div>
+      </div>
+      <div class="card">
+        <div class="headline">
+          <h2 style="margin:0">Protocol events, live</h2>
+          <span class="count" id="feed-count"></span>
+        </div>
+        <div class="sub">Newest first, in the vocabulary of the two verification paths.</div>
+        <div class="feed" id="feed"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONSENSUS -------------------------------------------------------- -->
+  <section id="s-consensus">
+    <div class="card">
+      <h2>Validator set and proposer rotation</h2>
+      <div class="sub">QBFT rotates the proposer round-robin. A validator that stops
+        proposing has left the quorum; below 3 of 4 the chain stops sealing.</div>
+      <div id="proposers"></div>
+    </div>
+    <div class="card">
+      <h2>Gas used per block
+        <button class="rowbtn" data-table="c-gas">table</button></h2>
+      <div class="sub">How heavy the campaign's transactions are. Contract deployments and
+        trace disclosure are the tall bars; protocol steps are the short ones.</div>
+      <div id="c-gas"></div>
+    </div>
+    <div class="card">
+      <h2>Verification stack</h2>
+      <div class="sub">Which contract decides a disputed leaf, and which FHEVM runtime
+        answers behind it. Read from the dispute game and from that runtime.</div>
+      <div id="stack" class="muted">no dispute game seen yet</div>
+    </div>
+    <div class="card">
+      <h2>Deployment manifest</h2>
+      <div class="sub">Written by the deployment stage; the addresses the non-linear path uses.</div>
+      <div id="manifest" class="muted">not loaded</div>
+    </div>
+  </section>
+
+  <!-- LINEAR ----------------------------------------------------------- -->
+  <section id="s-linear">
+    <div class="card">
+      <h2>Linear path — fixed aggregation with output binding</h2>
+      <div class="sub">Each data owner signs its own encrypted record. The contract admits
+        each record once under that owner's key, then accepts the result only if its
+        commitment equals the authorized accumulator. The consumer recomputes the digest
+        and the commitment off chain before decrypting.</div>
+      <div id="lin-summary"></div>
+    </div>
+    <div class="scan muted" id="lin-scan"></div>
+    <div id="linear"></div>
+  </section>
+
+  <!-- NON-LINEAR ------------------------------------------------------- -->
+  <section id="s-nonlinear">
+    <div class="card">
+      <h2>Non-linear path — optimistic authenticated trace</h2>
+      <div class="sub">A task is accepted unless an auditor opens a bonded challenge. A
+        challenged task forces complete trace disclosure, then logarithmic bisection down
+        to one leaf, which an FHEVM verifier re-executes on chain. Vote counts never decide
+        a contested computation.</div>
+      <div id="nl-summary"></div>
+    </div>
+    <div class="scan muted" id="nl-scan"></div>
+    <div id="nonlinear"></div>
+  </section>
+
+  <!-- INSPECT ---------------------------------------------------------- -->
+  <section id="s-inspect">
+    <div class="card">
+      <h2>Look up a transaction, block, or address</h2>
+      <div class="sub">Receipts are shown with their logs decoded whenever the event
+        belongs to one of the two verification paths.</div>
+      <div style="display:flex;gap:8px;">
+        <input id="q" style="flex:1" placeholder="0x… transaction hash / block hash / address, or a block number" />
+        <button id="go">look up</button>
+      </div>
+    </div>
+    <div id="inspect"></div>
+  </section>
+</main>
+
+<div id="tip"></div>
+
+<footer>
+  Read-only view over JSON-RPC (<code>eth_*</code>, <code>net_*</code>, <code>qbft_*</code>) and
+  <code>eth_subscribe</code>. No key is held and no transaction is ever sent. Contracts are
+  discovered by event signature, so the contracts each experiment deploys appear with no
+  configuration. These panels are for watching a run; every number the evaluation reports comes
+  from the campaign's own artifacts.
+</footer>
+
+<script>
+/* ======================================================================== *
+ *  helpers
+ * ======================================================================== */
+function $(id) { return document.getElementById(id); }
+function el(tag, cls, txt) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt !== undefined) e.textContent = txt;
+  return e;
+}
+function short(x, n) { n = n || 8; return x && x.length > 2 * n ? x.slice(0, n) + '…' + x.slice(-4) : x; }
+function showErr(m) { const e = $('err'); e.style.display = 'block'; e.textContent = m; }
+function clearErr() { $('err').style.display = 'none'; }
+const NF = new Intl.NumberFormat();
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* Mark a freshly inserted node so it animates in and fades its highlight. The
+   class is dropped once the animation ends, because re-inserting a node
+   restarts its animations and a row that merely moved must not flash again. */
+function arrive(node) {
+  node.classList.add('arrive');
+  node.addEventListener('animationend', function once(e) {
+    if (e.animationName !== 'fade') return;
+    node.classList.remove('arrive');
+    node.removeEventListener('animationend', once);
+  });
+  return node;
+}
+
+/* ======================================================================== *
+ *  protocol decoding
+ * ======================================================================== */
+const LINEAR_EVENTS = [
+  'event StakeDeposited(address indexed operator, uint256 amount)',
+  'event OwnerKeyRegistered(uint64 indexed index, address indexed ownerAddr)',
+  'event RecordAdmitted(uint64 indexed index, address indexed submitter, uint256[2] commitment)',
+  'event TaskRegistered(bytes32 indexed taskId, address indexed operator)',
+  'event ResultBound(bytes32 indexed taskId, bytes32 indexed outputDigest, uint256[2] outputCommitment, address indexed operator)'
+];
+const DISPUTE_EVENTS = [
+  'event OperatorRegistered(address indexed operator, uint256 stake)',
+  'event AuditorRegistered(address indexed auditor, uint256 stake)',
+  'event DecryptorRegistered(address indexed decryptor, uint256 stake)',
+  'event TaskCreated(bytes32 indexed taskId, address indexed operator, bytes32 operatorTraceRoot, uint32 leafCount)',
+  'event TerminalOutputBound(bytes32 indexed taskId, bytes32 terminalLeafHash, uint256 terminalOutput, bytes32 outputAttestationHash, bytes32 resultHash)',
+  'event ParticipantsSampled(bytes32 indexed taskId, bytes32 seed, uint64 sampleBlock)',
+  'event AuditSubmitted(bytes32 indexed taskId, address indexed auditor, uint32 indexed auditedLeafIndex, bytes32 podRoot, bytes32 verdictCommit)',
+  'event VerdictOpened(bytes32 indexed taskId, address indexed auditor, uint32 indexed auditedLeafIndex, bool verdictSupportsOperator, bytes32 podRoot)',
+  'event AuditDiligenceProven(bytes32 indexed taskId, address indexed auditor, uint32 indexed auditedLeafIndex, uint32 checkpointIndex, bytes32 checkpointHash)',
+  'event DiligenceRewardClaimed(bytes32 indexed taskId, address indexed auditor, uint32 indexed auditedLeafIndex, uint256 amount)',
+  'event DiligenceRandomnessSealed(bytes32 indexed taskId, bytes32 diligenceSeed)',
+  'event ChallengeOpened(bytes32 indexed taskId, address indexed challenger, bytes32 challengerTraceRoot, uint32 challengeLeafHint, bytes32 challengeErrorDigest, bytes32 challengePodRoot)',
+  'event ChallengeBondLocked(bytes32 indexed taskId, address indexed challenger, uint256 bondWei)',
+  'event ChallengeBondReleased(bytes32 indexed taskId, address indexed challenger, address indexed recipient, uint256 bondWei, bool slashed)',
+  'event DisputeBisected(bytes32 indexed taskId, uint32 nextStart, uint32 nextEnd, bytes32 operatorNode, bytes32 challengerNode)',
+  'event FhevmLeafResolutionRequested(bytes32 indexed taskId, uint32 indexed leafIndex, uint8 opcode, bytes32 operatorValidHandle, bytes32 challengerValidHandle)',
+  'event FhevmLeafResolutionFinalized(bytes32 indexed taskId, uint32 indexed leafIndex, uint8 opcode, bool operatorValid, bool challengerValid)',
+  'event LeafCheckedOnChain(bytes32 indexed taskId, uint32 indexed leafIndex, uint8 opcode, bool operatorValid, bool challengerValid, address verifier)',
+  'event TraceWithholdingSlashed(bytes32 indexed taskId, address indexed operator, address indexed requester, uint256 amount)',
+  'event LazyAuditorSlashed(bytes32 indexed taskId, address indexed auditor, address indexed reporter, uint256 amount)',
+  'event WrongVerdictAuditorSlashed(bytes32 indexed taskId, address indexed auditor, address indexed reporter, uint256 amount)',
+  'event DisputeTimedOut(bytes32 indexed taskId, address indexed defaulter, uint8 decision)',
+  'event TaskResolved(bytes32 indexed taskId, uint8 decision, address indexed winner)'
+];
+/* AuthenticatedTraceAvailability: the module that authorizes a task statement
+   and, once a challenge is open, publishes the disputed trace leaf with the
+   ciphertext handles of its two operands and its claimed result. Only the
+   events whose first indexed field is the task identifier are decoded here,
+   so they group into the same per-task timeline as the dispute-game events. */
+const TRACE_EVENTS = [
+  'event TaskStatementAuthorized(bytes32 indexed taskId, address indexed requester, address indexed operator, bytes32 inputRoot, bytes32 programRoot, bytes32 provenanceRoot)',
+  'event TaskStatementConsumed(bytes32 indexed taskId, address indexed operator)',
+  'event FullTraceDisclosureOpened(bytes32 indexed taskId, uint64 deadline, uint32 leafCount)',
+  'event DisputedTraceLeafPublished(bytes32 indexed taskId, uint32 indexed leafIndex, bytes32 traceLeafHash, bytes32 lhsHandle, bytes32 rhsHandle, bytes32 claimedHandle)',
+  'event FullTraceAvailable(bytes32 indexed taskId, uint32 leafCount)',
+  'event FullTraceUnavailable(bytes32 indexed taskId, address indexed operator)'
+];
+
+const DECISION = ['none', 'operator accepted', 'operator slashed', 'challenger slashed'];
+const TASK_STATUS = ['not created', 'auditing', 'challenged', 'finalized'];
+
+/* The micro-instruction set the dispute game re-executes on chain. The values
+   are the `uint8 public constant OPCODE_*` of ObjectiveMicroVerifier and of
+   FhevmObjectiveMicroVerifier, which declare the same fifteen; 0 is unused
+   and is rejected by both verifiers. `expr` is the predicate the verifier
+   checks, written as it appears in the contract. */
+const OPCODES = {
+  1:  { name: 'MUL',      expr: 'claimed == lhs * rhs' },
+  2:  { name: 'SHR',      expr: 'claimed == lhs >> rhs, rhs < 64' },
+  3:  { name: 'CAST_U8',  expr: 'claimed == uint8(lhs)' },
+  4:  { name: 'MIN',      expr: 'claimed == min(lhs, rhs)' },
+  5:  { name: 'BITAND',   expr: 'claimed == lhs & rhs' },
+  6:  { name: 'ADD',      expr: 'claimed == lhs + rhs' },
+  7:  { name: 'SUB',      expr: 'lhs >= rhs and claimed == lhs - rhs' },
+  8:  { name: 'DIV',      expr: 'rhs != 0 and claimed == lhs / rhs (floor)' },
+  9:  { name: 'MOD',      expr: 'rhs != 0 and claimed == lhs % rhs' },
+  10: { name: 'EQ',       expr: 'claimed == (lhs == rhs ? 1 : 0)' },
+  11: { name: 'LT',       expr: 'claimed == (lhs < rhs ? 1 : 0)' },
+  12: { name: 'GT',       expr: 'claimed == (lhs > rhs ? 1 : 0)' },
+  13: { name: 'BITOR',    expr: 'claimed == lhs | rhs' },
+  14: { name: 'BITXOR',   expr: 'claimed == lhs ^ rhs' },
+  15: { name: 'ADD_CHAIN', expr: 'claimed == lhs after rhs repeated +1 steps, 1 <= rhs <= 8' }
+};
+function opName(v) { const o = OPCODES[Number(v)]; return o ? o.name : ('opcode ' + v); }
+function opExpr(v) { const o = OPCODES[Number(v)]; return o ? o.expr : 'not a defined opcode'; }
+
+/* Where a disputed operand came from (AuthenticatedTraceAvailability). */
+const SOURCE_KIND = ['owner-registered input', 'output of the previous leaf', 'public constant'];
+
+/* The linear contracts fix one operation at deployment. */
+const LINEAR_OP = ['SUM', 'SUB'];
+
+/* Non-linear task identifiers are written with encodeBytes32String, so the
+   label is recoverable when the tail is zero padding and the head is
+   printable ASCII. Anything else is left as the raw hash. */
+function taskLabel(id) {
+  if (typeof id !== 'string' || id.length !== 66) return null;
+  const bytes = id.slice(2);
+  let out = '';
+  for (let i = 0; i < 64; i += 2) {
+    const c = parseInt(bytes.slice(i, i + 2), 16);
+    if (c === 0) {
+      // the rest must be padding for this to be a string
+      return /^0+$/.test(bytes.slice(i)) && out.length >= 3 ? out : null;
+    }
+    if (c < 0x20 || c > 0x7e) return null;
+    out += String.fromCharCode(c);
+  }
+  return out.length >= 3 ? out : null;
+}
+
+const SAYS = {
+  OwnerKeyRegistered: a => 'data owner ' + a[0] + ' registered its signing key',
+  RecordAdmitted: a => 'encrypted record ' + a[0] + ' admitted under its owner’s key',
+  TaskRegistered: () => 'aggregation task registered and assigned to an operator',
+  ResultBound: () => 'result bound to its output digest and commitment',
+  StakeDeposited: a => 'operator staked ' + fmtEth(a[1]),
+  OperatorRegistered: a => 'operator staked ' + fmtEth(a[1]),
+  AuditorRegistered: a => 'auditor staked ' + fmtEth(a[1]),
+  DecryptorRegistered: a => 'verdict-opening committee member staked ' + fmtEth(a[1]),
+  TaskCreated: a => 'task created over a trace of ' + a[3] + ' leaves',
+  TerminalOutputBound: () => 'terminal trace state bound to the output commitment',
+  ParticipantsSampled: () => 'auditors and opening committee sampled (commit-then-sample)',
+  AuditSubmitted: a => 'auditor committed a verdict on leaf ' + a[2],
+  VerdictOpened: a => 'verdict opened on leaf ' + a[2] + ': ' + (a[3] ? 'supports the operator' : 'against the operator'),
+  DiligenceRandomnessSealed: () => 'diligence randomness sealed',
+  AuditDiligenceProven: a => 'auditor proved diligence at checkpoint ' + a[3],
+  DiligenceRewardClaimed: a => 'auditor claimed a diligence reward of ' + fmtEth(a[3]),
+  ChallengeOpened: a => 'bonded challenge opened on leaf hint ' + a[3],
+  ChallengeBondLocked: a => 'challenge bond of ' + fmtEth(a[2]) + ' locked',
+  ChallengeBondReleased: a => 'challenge bond released' + (a[4] ? ' (slashed)' : ''),
+  DisputeBisected: a => 'bisection narrowed the dispute to leaves ' + a[1] + '–' + a[2],
+  FhevmLeafResolutionRequested: a => 'FHEVM check requested on leaf ' + a[1] +
+    ', operation ' + opName(a[2]),
+  FhevmLeafResolutionFinalized: a => 'FHEVM check on leaf ' + a[1] + ' (' + opName(a[2]) +
+    ') resolved: operator ' + (a[3] ? 'valid' : 'INVALID') + ', challenger ' + (a[4] ? 'valid' : 'INVALID'),
+  LeafCheckedOnChain: a => 'leaf ' + a[1] + ' re-executed on chain as ' + opName(a[2]) +
+    ' (' + opExpr(a[2]) + '): operator ' +
+    (a[3] ? 'valid' : 'INVALID') + ', challenger ' + (a[4] ? 'valid' : 'INVALID'),
+  TaskStatementAuthorized: a => 'task statement authorized by ' + short(a[1], 8) +
+    ' for operator ' + short(a[2], 8) + ' over its input, program and provenance roots',
+  TaskStatementConsumed: () => 'authorized statement consumed by the operator',
+  FullTraceDisclosureOpened: a => 'full trace disclosure opened over ' + a[2] + ' leaves',
+  DisputedTraceLeafPublished: a => 'disputed leaf ' + a[1] + ' published with its operand handles',
+  FullTraceAvailable: a => 'the complete trace of ' + a[1] + ' leaves was disclosed and re-hashed to the committed roots',
+  FullTraceUnavailable: () => 'the operator did not disclose the trace in time',
+  TaskResolved: a => 'task settled: ' + (DECISION[Number(a[1])] || a[1]),
+  DisputeTimedOut: a => 'dispute timed out: ' + (DECISION[Number(a[1])] || a[1]),
+  TraceWithholdingSlashed: a => 'operator slashed for withholding the trace (' + fmtEth(a[3]) + ')',
+  LazyAuditorSlashed: a => 'auditor slashed for not proving diligence (' + fmtEth(a[3]) + ')',
+  WrongVerdictAuditorSlashed: a => 'auditor slashed for a wrong verdict (' + fmtEth(a[3]) + ')'
+};
+function fmtEth(v) { try { return ethers.formatEther(v) + ' ETH'; } catch (e) { return String(v); } }
+
+let ifaceLinear, ifaceDispute, ifaceTrace, topicMap = {};
+/* Read-only call surfaces. Every function here is `view` or `pure`; the page
+   only ever issues eth_call against them. */
+const GAME_ABI = [
+  'function getTaskStatus(bytes32) view returns (uint8 status, uint8 decision, bool challengeTriggered, address operator, address challenger)',
+  'function getTaskResultBinding(bytes32) view returns (bytes32 resultHash, bytes32 operatorTraceRoot, uint32 leafCount)',
+  'function getTaskDisputeState(bytes32) view returns (uint32 disputeStart, uint32 disputeEnd, bytes32 currentOperatorNode, bytes32 currentChallengerNode)',
+  'function getPendingFhevmLeafResolution(bytes32) view returns (bool active, address verifier, uint8 opcode, uint32 leafIndex, bytes32 operatorValidHandle, bytes32 challengerValidHandle)',
+  'function getTaskDeadlines(bytes32) view returns (uint64 commitDeadline, uint64 openDeadline, uint64 challengeDeadline)',
+  'function getChallengeClaim(bytes32) view returns (address challenger, bytes32 challengerTraceRoot, uint32 challengeLeafHint, bytes32 challengeErrorDigest, bytes32 challengePodRoot, bytes32 challengeAuditLeafHash, bytes32 diligenceSeed)',
+  'function getAssignedAuditors(bytes32) view returns (address[])',
+  'function getAssignedDecryptors(bytes32) view returns (address[])',
+  'function secureTraceMode() view returns (bool)',
+  'function objectiveVerifier() view returns (address)',
+  'function fhevmVerifier() view returns (address)',
+  'function availabilityModule() view returns (address)',
+  'function COMMIT_WINDOW_SECONDS() view returns (uint64)',
+  'function OPEN_WINDOW_SECONDS() view returns (uint64)',
+  'function CHALLENGE_WINDOW_SECONDS() view returns (uint64)'
+];
+const LINEAR_ABI = [
+  'function datasetRef() view returns (string)',
+  'function totalItems() view returns (uint64)',
+  'function allowedOperation() view returns (uint8)',
+  'function admittedCount() view returns (uint64)',
+  'function datasetTag() view returns (bytes32)',
+  'function scale() view returns (uint64)',
+  'function getBoundResult(bytes32) view returns (uint256[2] outputCommitment, bytes32 outputDigest, address operator, bool accepted)'
+];
+const AVAIL_ABI = [
+  'function getDisclosedLeafHandles(bytes32, uint32) view returns (bytes32 traceLeafHash, bytes32 lhsHandle, bytes32 rhsHandle, bytes32 claimedHandle, uint8 lhsSourceKind, uint8 rhsSourceKind)',
+  'function isDisputeReady(bytes32) view returns (bool)',
+  'function isCleared(bytes32) view returns (bool)'
+];
+const FHEVM_ABI = [
+  'function eip712Domain() view returns (bytes1 fields, string name, string version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] extensions)',
+  'function getThreshold() view returns (uint256)',
+  'function plaintextOf(bytes32) view returns (uint256)'
+];
+let ifaceGame, ifaceLin, ifaceAvail, ifaceFhevm;
+
+function buildInterfaces() {
+  ifaceLinear = new ethers.Interface(LINEAR_EVENTS);
+  ifaceDispute = new ethers.Interface(DISPUTE_EVENTS);
+  ifaceTrace = new ethers.Interface(TRACE_EVENTS);
+  topicMap = {};
+  [[ifaceLinear, 'linear'], [ifaceDispute, 'dispute'], [ifaceTrace, 'dispute']].forEach(function (src) {
+    src[0].forEachEvent(function (ev) {
+      topicMap[ev.topicHash] = { iface: src[0], name: ev.name, path: src[1] };
+    });
+  });
+  ifaceGame = new ethers.Interface(GAME_ABI);
+  ifaceLin = new ethers.Interface(LINEAR_ABI);
+  ifaceAvail = new ethers.Interface(AVAIL_ABI);
+  ifaceFhevm = new ethers.Interface(FHEVM_ABI);
+}
+
+/* One read-only call. A contract that does not implement the selector answers
+   with empty data or reverts; both mean "not this contract" and are reported
+   as null rather than as an error. */
+async function ethCall(iface, address, fn, args) {
+  try {
+    const data = iface.encodeFunctionData(fn, args || []);
+    const res = await rpc('eth_call', [{ to: address, data: data }, 'latest']);
+    if (!res || res === '0x') return null;
+    return iface.decodeFunctionResult(fn, res);
+  } catch (e) { return null; }
+}
+
+/* ======================================================================== *
+ *  transport: WebSocket push, with polling as the automatic fallback
+ *
+ *  One object owns every call to the node. `rpc()` goes over the WebSocket
+ *  when it is open and over HTTP otherwise, so the rest of the page never has
+ *  to know which is in use. Subscriptions are re-established on reconnect and
+ *  the page is told, through the `mode` event, what it is running on.
+ * ======================================================================== */
+class ChainLink extends EventTarget {
+  constructor() {
+    super();
+    this.httpUrl = '/rpc';
+    this.wsUrl = '';
+    this.ws = null;
+    this.mode = 'down';
+    this.note = '';
+    this.nextId = 1;
+    this.pending = new Map();
+    this.subs = new Map();
+    this.logTopics = [];
+    this.backoff = 500;
+    this.stopped = true;
+    this.pollTimer = null;
+    this.pollBusy = false;
+    this.pendingFilter = null;
+    this.hasPendingFeed = false;
+  }
+
+  emit(type, detail) { this.dispatchEvent(new CustomEvent(type, { detail: detail })); }
+  setMode(mode, note) {
+    if (this.mode === mode && this.note === (note || '')) return;
+    this.mode = mode; this.note = note || '';
+    this.emit('mode', { mode: mode, note: this.note });
+  }
+
+  configure(http, ws, topics) {
+    this.httpUrl = http || '/rpc';
+    this.wsUrl = ws || '';
+    this.logTopics = topics || [];
+  }
+
+  start() {
+    this.stopped = false;
+    this.backoff = 500;
+    if (this.wsUrl) this.openWs();
+    else this.startPolling('no websocket endpoint configured');
+  }
+
+  stop() {
+    this.stopped = true;
+    this.stopPolling();
+    this.closeWs();
+    this.setMode('paused', 'paused by you');
+  }
+
+  restart() { this.stop(); this.stopped = false; this.start(); }
+
+  /* --- JSON-RPC ------------------------------------------------------- */
+  rpc(method, params) {
+    params = params || [];
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) return this.wsCall(method, params);
+    return this.httpCall(method, params);
+  }
+
+  wsCall(method, params) {
+    const self = this;
+    return new Promise(function (resolve, reject) {
+      const id = self.nextId++;
+      const timer = setTimeout(function () {
+        self.pending.delete(id);
+        reject(new Error(method + ': no websocket answer in 20 s'));
+      }, 20000);
+      self.pending.set(id, { resolve: resolve, reject: reject, timer: timer });
+      try {
+        self.ws.send(JSON.stringify({ jsonrpc: '2.0', id: id, method: method, params: params }));
+      } catch (e) {
+        clearTimeout(timer); self.pending.delete(id); reject(e);
+      }
+    });
+  }
+
+  async httpCall(method, params) {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 25000);
+    try {
+      const r = await fetch(this.httpUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: method, params: params }),
+        signal: ac.signal
+      });
+      if (!r.ok) throw new Error(method + ': HTTP ' + r.status);
+      const j = await r.json();
+      if (j.error) throw new Error(method + ': ' + j.error.message);
+      return j.result;
+    } finally { clearTimeout(timer); }
+  }
+
+  /* --- WebSocket ------------------------------------------------------ */
+  closeWs() {
+    const ws = this.ws;
+    this.ws = null;
+    if (!ws) return;
+    ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
+    try { ws.close(); } catch (e) { /* already closing */ }
+  }
+
+  openWs() {
+    if (this.stopped || !this.wsUrl) return;
+    let ws;
+    try { ws = new WebSocket(this.wsUrl); }
+    catch (e) { this.startPolling('websocket rejected: ' + (e.message || e)); return; }
+    this.ws = ws;
+    const self = this;
+    // A socket that neither opens nor errors within 5 s is treated as absent.
+    const guard = setTimeout(function () {
+      if (ws.readyState !== WebSocket.OPEN) { try { ws.close(); } catch (e) { } }
+    }, 5000);
+
+    ws.onopen = async function () {
+      clearTimeout(guard);
+      self.backoff = 500;
+      try {
+        await self.subscribeAll();
+        self.stopPolling();
+        self.setMode('ws', 'push: newHeads, protocol logs' + (self.hasPendingFeed ? ', pending transactions' : ''));
+        self.emit('resync');
+      } catch (e) {
+        self.startPolling('the node refused eth_subscribe: ' + (e.message || e));
+      }
+    };
+    ws.onmessage = function (ev) { self.onMessage(ev.data); };
+    ws.onerror = function () { /* onclose always follows */ };
+    ws.onclose = function () {
+      clearTimeout(guard);
+      self.subs.clear();
+      self.pending.forEach(function (p) { clearTimeout(p.timer); p.reject(new Error('websocket closed')); });
+      self.pending.clear();
+      if (self.ws === ws) self.ws = null;
+      if (self.stopped) return;
+      // Keep the page live on HTTP while the socket is down, and retry with
+      // a widening delay so a restarting node is not hammered.
+      self.startPolling('websocket down, polling meanwhile; retrying');
+      setTimeout(function () { self.openWs(); }, self.backoff);
+      self.backoff = Math.min(self.backoff * 2, 15000);
+    };
+  }
+
+  async subscribeAll() {
+    this.subs.clear();
+    this.hasPendingFeed = false;
+    // newHeads is the one subscription the live view cannot do without.
+    const head = await this.wsCall('eth_subscribe', ['newHeads']);
+    this.subs.set(head, 'head');
+    try {
+      const logs = await this.wsCall('eth_subscribe', ['logs', { topics: [this.logTopics] }]);
+      this.subs.set(logs, 'log');
+    } catch (e) { /* logs are also read per block; the page stays correct */ }
+    try {
+      const pend = await this.wsCall('eth_subscribe', ['newPendingTransactions']);
+      this.subs.set(pend, 'pending');
+      this.hasPendingFeed = true;
+    } catch (e) { /* the pool tile still reports the count */ }
+  }
+
+  onMessage(raw) {
+    let m;
+    try { m = JSON.parse(raw); } catch (e) { return; }
+    if (Array.isArray(m)) { m.forEach(this.handle, this); return; }
+    this.handle(m);
+  }
+
+  handle(m) {
+    if (m && m.id !== undefined && this.pending.has(m.id)) {
+      const p = this.pending.get(m.id);
+      this.pending.delete(m.id); clearTimeout(p.timer);
+      if (m.error) p.reject(new Error(m.error.message)); else p.resolve(m.result);
+      return;
+    }
+    if (m && m.method === 'eth_subscription' && m.params) {
+      const kind = this.subs.get(m.params.subscription);
+      if (kind === 'head' && m.params.result && m.params.result.number) {
+        this.emit('head', parseInt(m.params.result.number, 16));
+      } else if (kind === 'log') {
+        this.emit('log', m.params.result);
+      } else if (kind === 'pending') {
+        this.emit('pending', m.params.result);
+      }
+    }
+  }
+
+  /* --- polling fallback ----------------------------------------------- *
+   * Heads come from eth_blockNumber, which the ingest step turns into a
+   * gap-free range, and pending transactions from a pool filter when the
+   * node offers one. Protocol logs are not polled here: they are read per
+   * ingested block range in either mode, which is what makes the two modes
+   * produce the same history.                                              */
+  startPolling(note) {
+    this.setMode('poll', note || 'polling every 0.7 s');
+    if (this.pollTimer) return;
+    const self = this;
+    this.pendingFilter = null;
+    this.pollTimer = setInterval(function () { self.pollOnce(); }, 700);
+    this.pollOnce();
+  }
+
+  stopPolling() {
+    if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
+    this.pendingFilter = null;
+  }
+
+  async pollOnce() {
+    if (this.stopped || this.pollBusy || document.visibilityState === 'hidden') return;
+    this.pollBusy = true;
+    try {
+      const hex = await this.rpc('eth_blockNumber');
+      this.emit('head', parseInt(hex, 16));
+      if (this.pendingFilter === null) {
+        this.pendingFilter = await this.rpc('eth_newPendingTransactionFilter').catch(() => false);
+        this.hasPendingFeed = !!this.pendingFilter;
+      }
+      if (this.pendingFilter) {
+        const self = this;
+        const hashes = await this.rpc('eth_getFilterChanges', [this.pendingFilter])
+          .catch(function () { self.pendingFilter = null; return []; });
+        (hashes || []).forEach(h => this.emit('pending', h));
+      }
+    } catch (e) {
+      this.emit('trouble', String(e.message || e));
+    } finally { this.pollBusy = false; }
+  }
+}
+
+const link = new ChainLink();
+function rpc(method, params) { return link.rpc(method, params); }
+
+/* Chunked log read. Besu caps the span of a single eth_getLogs, and the chunk
+   shrinks automatically when the node rejects a range. */
+async function scanLogs(fromBlock, toBlock, topics) {
+  let span = 900, out = [], from = fromBlock;
+  while (from <= toBlock) {
+    const to = Math.min(from + span - 1, toBlock);
+    try {
+      out = out.concat(await rpc('eth_getLogs', [{
+        fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16), topics: [topics]
+      }]));
+      from = to + 1;
+    } catch (e) {
+      if (span <= 25) throw e;
+      span = Math.floor(span / 4);
+    }
+  }
+  return out;
+}
+
+/* ======================================================================== *
+ *  state
+ * ======================================================================== */
+const STREAM_MAX = 14, TX_MAX = 40, FEED_MAX = 60;
+
+const state = {
+  height: 0, prevHeight: -1, chainId: null,
+  lastIngested: -1, ingestedCount: 0, gapsFilled: 0,
+  blocks: new Map(),          // number -> { ts, txs, miner, gas, hash }
+  validators: [], peers: null, pool: null,
+  decoded: [],                // protocol events, ascending by block
+  seenLogs: new Set(),        // txHash:logIndex
+  linearInfo: new Map(),      // linear contract address -> what it was deployed to compute
+  taskInfo: new Map(),        // taskId -> on-chain state of the dispute-game task
+  stack: new Map(),           // game address -> the verifier stack behind it
+  manifest: null,             // network/deployment.<chainId>.json when present
+  txs: new Map(),             // hash -> { hash, from, to, value, status, block }
+  txOrder: [],                // newest first
+  scannedFrom: 0, scannedTo: -1,
+  booted: false
+};
+
+/* ======================================================================== *
+ *  charts (unchanged forms: one column chart per quantity, table on demand)
+ * ======================================================================== */
+const SURFACE = '#1a1a19', GRID = '#383835', INK3 = '#8f8e85';
+
+function svgEl(w, h) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+  s.setAttribute('width', '100%'); s.setAttribute('height', h);
+  s.style.display = 'block';
+  return s;
+}
+function node(name, attrs) {
+  const n = document.createElementNS('http://www.w3.org/2000/svg', name);
+  Object.keys(attrs || {}).forEach(k => n.setAttribute(k, attrs[k]));
+  return n;
+}
+function tipShow(ev, value, label, colour) {
+  const t = $('tip');
+  t.innerHTML = '';
+  t.appendChild(el('div', 'val', value));
+  const l = el('div', 'lbl');
+  const key = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  key.setAttribute('width', '14'); key.setAttribute('height', '8');
+  key.appendChild(node('line', { x1: 0, y1: 4, x2: 14, y2: 4, stroke: colour, 'stroke-width': 2 }));
+  l.appendChild(key); l.appendChild(document.createTextNode(' ' + label));
+  t.appendChild(l);
+  t.style.display = 'block';
+  t.style.left = Math.min(window.innerWidth - 170, ev.clientX + 14) + 'px';
+  t.style.top = Math.max(8, ev.clientY - 50) + 'px';
+}
+function tipHide() { $('tip').style.display = 'none'; }
+
+function columnChart(host, rows, colour, unit, cap) {
+  host.innerHTML = '';
+  if (!rows.length) { host.appendChild(el('p', 'muted', 'no block read yet')); return; }
+  const trueMax = Math.max(0, ...rows.map(r => r.v));
+  if (trueMax === 0) {
+    host.appendChild(el('p', 'muted',
+      'nothing to plot in this window: no transaction was mined in these blocks. ' +
+      'Between protocol steps the campaign waits out real chain time.'));
+    return;
+  }
+  const W = 860, H = 190, PAD_L = 42, PAD_B = 24, PAD_T = 12;
+  const max = cap ? Math.min(trueMax, cap) : trueMax;
+  const plotW = W - PAD_L - 8, plotH = H - PAD_B - PAD_T;
+  const band = plotW / rows.length;
+  const barW = Math.min(24, Math.max(2, band - 2));
+  const s = svgEl(W, H);
+  const seen = {};
+  [0, 0.5, 1].forEach(function (f) {
+    const y = PAD_T + plotH - f * plotH;
+    s.appendChild(node('line', { x1: PAD_L, y1: y, x2: W - 8, y2: y, stroke: GRID, 'stroke-width': 1 }));
+    const label = Math.round(f * max).toLocaleString();
+    if (seen[label]) return; seen[label] = 1;
+    const t = node('text', { x: PAD_L - 6, y: y + 4, fill: INK3, 'font-size': 10, 'text-anchor': 'end' });
+    t.textContent = label; s.appendChild(t);
+  });
+  rows.forEach(function (r, i) {
+    const h = Math.min(r.v, max) / max * plotH;
+    const x = PAD_L + i * band + (band - barW) / 2;
+    const y = PAD_T + plotH - h;
+    if (h > 0) {
+      s.appendChild(node('rect', { x: x, y: y, width: barW, height: Math.max(h, 1),
+        rx: Math.min(4, barW / 2), fill: colour }));
+    }
+    const hit = node('rect', { x: PAD_L + i * band, y: PAD_T, width: band, height: plotH, fill: 'transparent' });
+    hit.addEventListener('pointermove', e => tipShow(e, r.v.toLocaleString() + ' ' + unit, 'block ' + r.x, colour));
+    hit.addEventListener('pointerleave', tipHide);
+    s.appendChild(hit);
+  });
+  const first = node('text', { x: PAD_L, y: H - 6, fill: INK3, 'font-size': 10 });
+  first.textContent = 'block ' + rows[0].x; s.appendChild(first);
+  const last = node('text', { x: W - 8, y: H - 6, fill: INK3, 'font-size': 10, 'text-anchor': 'end' });
+  last.textContent = 'block ' + rows[rows.length - 1].x; s.appendChild(last);
+  const labelled = {};
+  const mi = rows.reduce((b, r, i) => rows[b].v >= r.v ? b : i, 0);
+  labelled[mi] = 1;
+  rows.forEach((r, i) => { if (cap && r.v > cap) labelled[i] = 1; });
+  Object.keys(labelled).forEach(function (k) {
+    const i = Number(k);
+    const lx = PAD_L + i * band + band / 2;
+    const ly = PAD_T + plotH - Math.min(rows[i].v, max) / max * plotH - 5;
+    const lab = node('text', { x: lx, y: Math.max(10, ly), fill: '#c3c2b7', 'font-size': 10, 'text-anchor': 'middle' });
+    lab.textContent = rows[i].v.toLocaleString(); s.appendChild(lab);
+  });
+  host.appendChild(s);
+  if (cap && trueMax > cap) {
+    host.appendChild(el('div', 'sub muted',
+      'Scale capped at ' + cap + ' ' + unit + ' so the ordinary range stays readable; every value above the cap is labelled with its real number.'));
+  }
+}
+
+function tableFor(rows, head, unit) {
+  const t = el('table');
+  const tr = el('tr'); tr.appendChild(el('th', null, head)); tr.appendChild(el('th', null, unit));
+  t.appendChild(tr);
+  rows.slice().reverse().forEach(function (r) {
+    const row = el('tr');
+    row.appendChild(el('td', 'mono', String(r.x)));
+    row.appendChild(el('td', 'num', typeof r.v === 'number' ? r.v.toLocaleString() : String(r.v)));
+    t.appendChild(row);
+  });
+  return t;
+}
+
+function windowRows() {
+  const nums = Array.from(state.blocks.keys()).sort((a, b) => a - b);
+  const txs = nums.map(n => ({ x: n, v: state.blocks.get(n).txs }));
+  const ints = [];
+  for (let i = 1; i < nums.length; i++) {
+    const a = state.blocks.get(nums[i - 1]), b = state.blocks.get(nums[i]);
+    if (a && b) ints.push({ x: nums[i], v: b.ts - a.ts });
+  }
+  const gas = nums.map(n => ({ x: n, v: state.blocks.get(n).gas }));
+  return { nums: nums, txs: txs, ints: ints, gas: gas };
+}
+
+let charts = {};
+function drawCharts(rows) {
+  charts['c-tx'] = { rows: rows.txs, head: 'block', unit: 'transactions',
+    draw: h => columnChart(h, rows.txs, 'var(--series-1)', 'transactions') };
+  charts['c-int'] = { rows: rows.ints, head: 'block', unit: 'seconds',
+    draw: h => columnChart(h, rows.ints, 'var(--series-2)', 's', 10) };
+  charts['c-gas'] = { rows: rows.gas, head: 'block', unit: 'gas used',
+    draw: h => columnChart(h, rows.gas, 'var(--series-1)', 'gas') };
+  Object.keys(charts).forEach(function (id) {
+    const host = $(id);
+    if (host && host.dataset.view !== 'table') charts[id].draw(host);
+  });
+}
+
+/* ======================================================================== *
+ *  ingestion — every block exactly once, in order
+ *
+ *  A head notification only says how far the chain has got. The gap between
+ *  the last ingested block and that head is read here, in order, before the
+ *  head is considered current, which is what stops the view from jumping.
+ * ======================================================================== */
+let ingesting = false, wantHead = -1;
+const BURST = 24;
+
+function absorbBlock(b) {
+  const n = parseInt(b.number, 16);
+  const rec = {
+    ts: parseInt(b.timestamp, 16),
+    txs: b.transactions.length,
+    miner: ethers.getAddress(b.miner),
+    gas: parseInt(b.gasUsed, 16),
+    hash: b.hash
+  };
+  state.blocks.set(n, rec);
+  state.ingestedCount++;
+  pushStream(n, rec, b.transactions);
+  (b.transactions || []).forEach(function (t) {
+    if (typeof t === 'string') { markMined(t, n); return; }
+    noteTx({ hash: t.hash, from: t.from, to: t.to, value: t.value, status: 'mined', block: n });
+  });
+}
+
+function absorbLog(l) {
+  const key = l.transactionHash + ':' + l.logIndex;
+  if (state.seenLogs.has(key)) return null;
+  state.seenLogs.add(key);
+  const m = topicMap[l.topics[0]];
+  if (!m) return null;
+  let parsed = null;
+  try { parsed = m.iface.parseLog({ topics: l.topics, data: l.data }); } catch (e) { }
+  const e = {
+    path: m.path, name: m.name, address: ethers.getAddress(l.address),
+    block: parseInt(l.blockNumber, 16), tx: l.transactionHash,
+    args: parsed ? parsed.args : null
+  };
+  state.decoded.push(e);
+  return e;
+}
+
+async function ingestRange(from, to) {
+  const nums = [];
+  for (let n = from; n <= to; n++) nums.push(n);
+  const blocks = await Promise.all(nums.map(n =>
+    rpc('eth_getBlockByNumber', ['0x' + n.toString(16), true]).catch(() => null)));
+  blocks.forEach(b => { if (b) absorbBlock(b); });
+  // Read the protocol logs of the same range. In WebSocket mode the same logs
+  // also arrive by subscription; the seen-set makes the two agree.
+  const logs = await scanLogs(from, to, Object.keys(topicMap)).catch(() => []);
+  const fresh = logs.map(absorbLog).filter(Boolean);
+  if (fresh.length) { sortEvents(); fresh.forEach(pushFeed); }
+}
+
+function sortEvents() { state.decoded.sort((a, b) => a.block - b.block); }
+
+async function onHead(n) {
+  if (!Number.isFinite(n) || n < 0) return;
+  wantHead = Math.max(wantHead, n);
+  if (ingesting || !state.booted) return;
+  ingesting = true;
+  try {
+    while (state.lastIngested < wantHead) {
+      const from = state.lastIngested + 1;
+      const to = Math.min(wantHead, from + BURST - 1);
+      if (to > from) state.gapsFilled += (to - from);
+      await ingestRange(from, to);
+      state.lastIngested = to;
+      state.prevHeight = state.height;
+      state.height = state.lastIngested;
+      trimWindow();
+      mark('health', 'stream', 'charts', 'proposers', 'paths');
+    }
+    clearErr();
+  } catch (e) {
+    showErr(String(e.message || e));
+  } finally {
+    ingesting = false;
+    if (wantHead > state.lastIngested) onHead(wantHead);
+  }
+}
+
+function trimWindow() {
+  const win = Number($('win').value);
+  const first = Math.max(0, state.height - win + 1);
+  for (const n of state.blocks.keys()) if (n < first) state.blocks.delete(n);
+}
+
+/* transactions ---------------------------------------------------------- */
+let detailBudget = 0;
+function noteTx(t) {
+  const prev = state.txs.get(t.hash);
+  if (prev) {
+    Object.assign(prev, t);
+    const nodeEl = document.querySelector('[data-tx="' + t.hash + '"]');
+    if (nodeEl) paintTx(nodeEl, prev);
+    return;
+  }
+  state.txs.set(t.hash, t);
+  state.txOrder.unshift(t.hash);
+  while (state.txOrder.length > TX_MAX) state.txs.delete(state.txOrder.pop());
+  mark('txs');
+}
+function markMined(hash, block) {
+  const t = state.txs.get(hash);
+  if (t) { t.status = 'mined'; t.block = block; mark('txs'); }
+  else noteTx({ hash: hash, status: 'mined', block: block });
+}
+async function onPending(hash) {
+  if (typeof hash !== 'string' || state.txs.has(hash)) return;
+  noteTx({ hash: hash, status: 'pending', at: Date.now() });
+  // Sender and recipient make the feed readable; the lookup is capped so a
+  // burst from the campaign cannot turn into a request storm.
+  if (detailBudget >= 4) return;
+  detailBudget++;
+  try {
+    const tx = await rpc('eth_getTransactionByHash', [hash]);
+    if (tx) noteTx({ hash: hash, from: tx.from, to: tx.to, value: tx.value,
+      status: tx.blockNumber ? 'mined' : 'pending',
+      block: tx.blockNumber ? parseInt(tx.blockNumber, 16) : undefined });
+  } catch (e) { /* the hash alone is still useful */ }
+  finally { detailBudget--; }
+}
+
+/* ======================================================================== *
+ *  live rendering — nodes are prepended, never re-listed, so an arriving
+ *  block animates once instead of the whole list redrawing under it
+ * ======================================================================== */
+const dirty = new Set();
+let frame = 0;
+function mark() {
+  for (let i = 0; i < arguments.length; i++) dirty.add(arguments[i]);
+  if (!frame) frame = requestAnimationFrame(flush);
+}
+function flush() {
+  frame = 0;
+  const todo = new Set(dirty); dirty.clear();
+  const rows = (todo.has('health') || todo.has('charts') || todo.has('proposers')) ? windowRows() : null;
+  if (todo.has('health')) renderHealth(rows);
+  if (todo.has('charts')) maybeDrawCharts(rows);
+  if (todo.has('proposers')) renderProposers(rows);
+  if (todo.has('txs')) renderTxs();
+  if (todo.has('paths')) {
+    renderWhatNow(); renderWhatComputed(); renderLinear(); renderNonLinear(); renderScanNote();
+  }
+  if (todo.has('stack')) renderStack();
+}
+
+let lastChartDraw = 0, chartPending = false;
+function maybeDrawCharts(rows) {
+  const now = performance.now();
+  if (now - lastChartDraw < 900) {
+    if (!chartPending) {
+      chartPending = true;
+      setTimeout(function () { chartPending = false; mark('charts'); }, 900);
+    }
+    return;
+  }
+  lastChartDraw = now;
+  drawCharts(rows || windowRows());
+}
+
+function proposerIndex(addr) {
+  const set = state.validators.map(v => ethers.getAddress(v));
+  const i = set.indexOf(addr);
+  return i >= 0 ? i + 1 : null;
+}
+
+function pushStream(n, rec, txs, quiet) {
+  const host = $('stream');
+  if (host.firstChild && Number(host.firstChild.dataset.n) >= n) return;
+  const card = el('evaluation', 'blk' + (rec.txs ? '' : ' empty'));
+  card.dataset.n = String(n);
+  card.dataset.ts = String(rec.ts);
+
+  const left = el('div');
+  left.appendChild(el('div', 'n', '#' + NF.format(n)));
+  card.appendChild(left);
+
+  const mid = el('div');
+  const meta = el('div', 'meta');
+  const vi = proposerIndex(rec.miner);
+  const prop = el('span'); prop.innerHTML = '';
+  prop.appendChild(document.createTextNode('proposer '));
+  prop.appendChild(el('b', null, vi ? ('validator ' + vi) : short(rec.miner, 8)));
+  meta.appendChild(prop);
+  const txc = el('span');
+  txc.appendChild(document.createTextNode(rec.txs === 0 ? 'no transaction' : ''));
+  if (rec.txs) { txc.appendChild(el('b', null, NF.format(rec.txs))); txc.appendChild(document.createTextNode(rec.txs === 1 ? ' transaction' : ' transactions')); }
+  meta.appendChild(txc);
+  const g = el('span'); g.appendChild(document.createTextNode('gas '));
+  g.appendChild(el('b', null, NF.format(rec.gas)));
+  meta.appendChild(g);
+  mid.appendChild(meta);
+  if (Array.isArray(txs) && txs.length) {
+    const row = el('div', 'meta');
+    txs.slice(0, 3).forEach(function (t) {
+      const h = typeof t === 'string' ? t : t.hash;
+      const a = el('a', 'chip', short(h, 6));
+      a.href = '#'; a.title = h;
+      a.addEventListener('click', function (ev) { ev.preventDefault(); openInspect(h); });
+      row.appendChild(a);
+    });
+    if (txs.length > 3) row.appendChild(el('span', 'chip', '+' + (txs.length - 3) + ' more'));
+    mid.appendChild(row);
+  }
+  card.appendChild(mid);
+
+  card.appendChild(el('div', 'when', 'just now'));
+  // Blocks read to prime the window are history, not live traffic: they are
+  // placed without the arrival animation so only new blocks draw the eye.
+  host.prepend(quiet ? card : arrive(card));
+  while (host.children.length > STREAM_MAX) host.lastChild.remove();
+  $('stream-count').textContent = NF.format(state.ingestedCount) + ' read';
+}
+
+function paintTx(nodeEl, t) {
+  nodeEl.dataset.status = t.status;
+  const pill = nodeEl.querySelector('.pill');
+  const cls = t.status === 'mined' ? 'p-good' : (t.status === 'failed' ? 'p-bad' : 'p-warn');
+  pill.className = 'pill ' + cls;
+  pill.textContent = t.status === 'mined' ? '● in block' : (t.status === 'failed' ? '■ failed' : '▲ pending');
+  nodeEl.querySelector('.where').textContent =
+    t.status === 'mined' ? ('block ' + NF.format(t.block)) : 'in the pool';
+  const to = nodeEl.querySelector('.route');
+  if (to) {
+    to.textContent = t.from
+      ? (short(t.from, 6) + ' → ' + (t.to ? short(t.to, 6) : 'contract creation'))
+      : 'reading the transaction…';
+  }
+}
+
+function renderTxs() {
+  const host = $('txs');
+  const want = state.txOrder.slice(0, TX_MAX);
+  const have = new Map();
+  Array.prototype.forEach.call(host.children, c => have.set(c.dataset.tx, c));
+  // remove what fell out of the window
+  have.forEach(function (c, hash) { if (want.indexOf(hash) < 0) c.remove(); });
+  // insert what is new, newest first, and leave in place anything already in
+  // the right position: moving a node restarts its CSS animation.
+  want.forEach(function (hash, i) {
+    const t = state.txs.get(hash);
+    let nodeEl = have.get(hash);
+    const isNew = !nodeEl;
+    if (!nodeEl) {
+      nodeEl = el('div', 'tx');
+      nodeEl.dataset.tx = hash;
+      const pill = el('span', 'pill p-warn', '▲ pending');
+      nodeEl.appendChild(pill);
+      const mid = el('div');
+      const a = el('a', 'hash', short(hash, 10));
+      a.href = '#'; a.title = hash;
+      a.addEventListener('click', function (ev) { ev.preventDefault(); openInspect(hash); });
+      mid.appendChild(a);
+      mid.appendChild(el('div', 'route muted', ''));
+      nodeEl.appendChild(mid);
+      nodeEl.appendChild(el('span', 'where', ''));
+      arrive(nodeEl);
+    }
+    paintTx(nodeEl, t);
+    if (isNew || host.children[i] !== nodeEl) {
+      const at = host.children[i];
+      if (at) host.insertBefore(nodeEl, at); else host.appendChild(nodeEl);
+    }
+  });
+  $('tx-count').textContent = state.txOrder.length
+    ? NF.format(state.txOrder.length) + ' recent'
+    : (link.hasPendingFeed ? 'waiting for the first transaction' : 'pool feed unavailable on this node');
+}
+
+function feedLine(e) {
+  const d = el('div');
+  d.appendChild(el('span', 'pill ' + (e.path === 'linear' ? 'p-lin' : 'p-non'), e.path));
+  d.appendChild(document.createTextNode(' '));
+  d.appendChild(el('span', 'muted', '#' + e.block + ' '));
+  d.appendChild(document.createTextNode(e.args && SAYS[e.name] ? SAYS[e.name](e.args) : e.name));
+  return d;
+}
+function pushFeed(e) {
+  const host = $('feed');
+  const empty = host.querySelector('[data-empty]');
+  if (empty) empty.remove();
+  host.prepend(arrive(feedLine(e)));
+  while (host.children.length > FEED_MAX) host.lastChild.remove();
+  $('feed-count').textContent = NF.format(state.decoded.length) + ' seen';
+}
+function rebuildFeed() {
+  const host = $('feed');
+  host.innerHTML = '';
+  const evs = state.decoded.slice(-FEED_MAX).reverse();
+  if (!evs.length) {
+    const p = el('p', 'muted', 'nothing yet — the campaign has not written a protocol event in the scanned range');
+    p.dataset.empty = '1';
+    host.appendChild(p);
+  } else evs.forEach(e => host.appendChild(feedLine(e)));
+  $('feed-count').textContent = NF.format(state.decoded.length) + ' seen';
+}
+
+/* ======================================================================== *
+ *  what is being computed — read from the contracts, not guessed
+ *
+ *  Everything below is eth_call against view functions. The linear contracts
+ *  carry their own description (the dataset label, the item count and the one
+ *  operation they admit), so that path names itself. The dispute game does not
+ *  store any workload name, so the non-linear side reports what the chain does
+ *  hold: the trace size, the disputed interval, the micro-operation under
+ *  check and which verifier is deciding it.
+ * ======================================================================== */
+const ENRICH_MS = 4000;
+let enriching = false;
+
+async function enrichLinear(addr) {
+  const prev = state.linearInfo.get(addr);
+  const now = Date.now();
+  if (prev && (prev.fixed === false || now - prev.at < ENRICH_MS)) return;
+  const info = prev ? Object.assign({}, prev) : { addr: addr };
+  info.at = now;
+  if (!prev) {
+    const ref = await ethCall(ifaceLin, addr, 'datasetRef');
+    if (ref === null) { state.linearInfo.set(addr, { addr: addr, fixed: false, at: now }); return; }
+    info.datasetRef = String(ref[0]);
+    const [items, op, tag, scale] = await Promise.all([
+      ethCall(ifaceLin, addr, 'totalItems'),
+      ethCall(ifaceLin, addr, 'allowedOperation'),
+      ethCall(ifaceLin, addr, 'datasetTag'),
+      ethCall(ifaceLin, addr, 'scale')
+    ]);
+    info.totalItems = items ? Number(items[0]) : null;
+    info.operation = op ? Number(op[0]) : null;
+    info.datasetTag = tag ? tag[0] : null;
+    info.scale = scale ? Number(scale[0]) : null;
+  }
+  const adm = await ethCall(ifaceLin, addr, 'admittedCount');
+  info.admittedCount = adm ? Number(adm[0]) : null;
+  state.linearInfo.set(addr, info);
+}
+
+async function enrichStack(game) {
+  const prev = state.stack.get(game);
+  if (prev) return;
+  const [secure, obj, fhevm, avail, cw, ow, chw] = await Promise.all([
+    ethCall(ifaceGame, game, 'secureTraceMode'),
+    ethCall(ifaceGame, game, 'objectiveVerifier'),
+    ethCall(ifaceGame, game, 'fhevmVerifier'),
+    ethCall(ifaceGame, game, 'availabilityModule'),
+    ethCall(ifaceGame, game, 'COMMIT_WINDOW_SECONDS'),
+    ethCall(ifaceGame, game, 'OPEN_WINDOW_SECONDS'),
+    ethCall(ifaceGame, game, 'CHALLENGE_WINDOW_SECONDS')
+  ]);
+  if (secure === null && obj === null) { state.stack.set(game, { game: game, unknown: true }); return; }
+  const info = {
+    game: game,
+    secureTraceMode: secure ? Boolean(secure[0]) : null,
+    objectiveVerifier: obj ? obj[0] : null,
+    fhevmVerifier: fhevm ? fhevm[0] : null,
+    availabilityModule: avail ? avail[0] : null,
+    windows: { commit: cw ? Number(cw[0]) : null, open: ow ? Number(ow[0]) : null, challenge: chw ? Number(chw[0]) : null }
+  };
+  // Which FHEVM stack answers behind the verifier. LocalFhevmKMSVerifier names
+  // itself in its EIP-712 domain and fixes its threshold at 1; the real Zama
+  // verifier reports the configured domain and t+1. This is read, not assumed.
+  const kms = (state.manifest && state.manifest.contracts && state.manifest.contracts.LocalFhevmKMSVerifier) || null;
+  if (kms) {
+    const dom = await ethCall(ifaceFhevm, kms, 'eip712Domain');
+    const thr = await ethCall(ifaceFhevm, kms, 'getThreshold');
+    info.kms = { address: kms, domain: dom ? String(dom[1]) : null, threshold: thr ? Number(thr[0]) : null };
+  }
+  const exec = (state.manifest && state.manifest.contracts && state.manifest.contracts.LocalFhevmExecutor) || null;
+  if (exec) info.executor = exec;
+  state.stack.set(game, info);
+}
+
+async function enrichTask(taskId, game) {
+  const prev = state.taskInfo.get(taskId);
+  const now = Date.now();
+  if (prev && (prev.frozen || now - prev.at < ENRICH_MS)) return;
+  const [st, bind, disp, pend, dl, claim] = await Promise.all([
+    ethCall(ifaceGame, game, 'getTaskStatus', [taskId]),
+    ethCall(ifaceGame, game, 'getTaskResultBinding', [taskId]),
+    ethCall(ifaceGame, game, 'getTaskDisputeState', [taskId]),
+    ethCall(ifaceGame, game, 'getPendingFhevmLeafResolution', [taskId]),
+    ethCall(ifaceGame, game, 'getTaskDeadlines', [taskId]),
+    ethCall(ifaceGame, game, 'getChallengeClaim', [taskId])
+  ]);
+  if (st === null) { state.taskInfo.set(taskId, { at: now, unknown: true }); return; }
+  const info = {
+    at: now, game: game,
+    status: Number(st[0]), decision: Number(st[1]), challengeTriggered: Boolean(st[2]),
+    operator: st[3], challenger: st[4],
+    resultHash: bind ? bind[0] : null,
+    traceRoot: bind ? bind[1] : null,
+    leafCount: bind ? Number(bind[2]) : null,
+    disputeStart: disp ? Number(disp[0]) : null,
+    disputeEnd: disp ? Number(disp[1]) : null,
+    pending: pend ? {
+      active: Boolean(pend[0]), verifier: pend[1], opcode: Number(pend[2]),
+      leafIndex: Number(pend[3]), operatorValidHandle: pend[4], challengerValidHandle: pend[5]
+    } : null,
+    deadlines: dl ? { commit: Number(dl[0]), open: Number(dl[1]), challenge: Number(dl[2]) } : null,
+    challengeLeafHint: claim ? Number(claim[2]) : null
+  };
+  // The handles of the disputed leaf and, with them, where each operand came
+  // from. Only readable once the disclosure made the task dispute-ready.
+  const stack = state.stack.get(game);
+  const leaf = info.pending && info.pending.active ? info.pending.leafIndex
+    : (info.disputeStart !== null && info.disputeStart === info.disputeEnd ? info.disputeStart : null);
+  if (stack && stack.availabilityModule && leaf !== null) {
+    const h = await ethCall(ifaceAvail, stack.availabilityModule, 'getDisclosedLeafHandles', [taskId, leaf]);
+    if (h) {
+      info.leaf = {
+        index: leaf, traceLeafHash: h[0], lhsHandle: h[1], rhsHandle: h[2], claimedHandle: h[3],
+        lhsSource: Number(h[4]), rhsSource: Number(h[5])
+      };
+      // On a deployment whose FHEVM runtime is the local stand-in, the handle
+      // is the operand itself: reading it back proves that, and is the only
+      // honest way to describe what the leaf check is operating on.
+      if (stack.executor && h[1] && h[1] !== ethers.ZeroHash) {
+        const p = await ethCall(ifaceFhevm, stack.executor, 'plaintextOf', [h[1]]);
+        if (p !== null) info.leaf.lhsPlaintext = p[0].toString();
+      }
+    }
+  }
+  info.frozen = info.status === 3 && !(info.pending && info.pending.active);
+  state.taskInfo.set(taskId, info);
+}
+
+/* One pass over what is currently on screen. Serialised, so a long campaign
+   cannot turn the panels into a request storm. */
+async function enrich() {
+  if (enriching || link.mode === 'paused' || document.visibilityState === 'hidden') return;
+  enriching = true;
+  try {
+    const linAddrs = new Set(state.decoded.filter(e => e.path === 'linear').map(e => e.address));
+    for (const a of linAddrs) await enrichLinear(a);
+
+    const games = new Map();     // taskId -> game address
+    const gameAddrs = new Set();
+    state.decoded.filter(e => e.path === 'dispute').forEach(function (e) {
+      if (!e.args || typeof e.args[0] !== 'string' || e.args[0].length !== 66) return;
+      // The availability module emits with the same task identifier; the game
+      // is whichever address emitted TaskCreated for it.
+      if (e.name === 'TaskCreated') { games.set(e.args[0], e.address); gameAddrs.add(e.address); }
+      else if (!games.has(e.args[0])) games.set(e.args[0], null);
+    });
+    // A task seen only through the availability module still resolves if a
+    // single game is in play.
+    const onlyGame = gameAddrs.size === 1 ? Array.from(gameAddrs)[0] : null;
+    for (const g of gameAddrs) await enrichStack(g);
+    // The most recently seen tasks are the ones worth re-reading; a campaign
+    // that ran hundreds of them must not turn one pass into hundreds of calls.
+    const recent = Array.from(games.entries()).slice(-12);
+    for (const [taskId, g] of recent) {
+      const game = g || onlyGame;
+      if (game) await enrichTask(taskId, game);
+    }
+    mark('paths', 'stack');
+  } catch (e) { /* enrichment is additive; the event view stays correct */ }
+  finally { enriching = false; }
+}
+
+/* ======================================================================== *
+ *  panels
+ * ======================================================================== */
+function renderHealth(rows) {
+  rows = rows || windowRows();
+  const nums = rows.nums;
+  const lastTs = nums.length ? state.blocks.get(nums[nums.length - 1]).ts : 0;
+  const age = lastTs ? Math.max(0, Math.floor(Date.now() / 1000) - lastTs) : null;
+  const med = rows.ints.length
+    ? rows.ints.map(r => r.v).sort((a, b) => a - b)[Math.floor(rows.ints.length / 2)] : null;
+  const vals = state.validators.length, peers = state.peers;
+  const advancing = state.prevHeight >= 0 ? state.height > state.prevHeight : null;
+
+  let level, word, why;
+  if (state.height === 0) {
+    level = 'critical'; word = 'NOT SEALING';
+    why = 'The node answers but the chain is at height 0. QBFT needs at least 3 of the 4 ' +
+      'validators connected; with ' + (peers === null ? 'no peer information' : peers + ' peers') +
+      ' no block can be sealed, and every transaction of the campaign would wait forever.';
+  } else if (age !== null && age > 30) {
+    level = 'critical'; word = 'STALLED';
+    why = 'The last block was sealed ' + age + ' s ago on a 2 s chain. Check the validators: ' +
+      'docker compose ps, then docker compose logs --tail=40 node2.';
+  } else if ((peers !== null && peers < 3) || vals < 4) {
+    level = 'warning'; word = 'DEGRADED';
+    why = 'Sealing, but the quorum has no margin: ' + vals + ' validators in the set, ' +
+      (peers === null ? 'peer count unavailable' : peers + ' peers connected') + '. One more loss stops the chain.';
+  } else {
+    level = 'good'; word = 'SEALING';
+    why = 'The network is healthy: ' + vals + ' validators, ' + peers + ' peers, a block every ' +
+      (med === null ? '2' : med) + ' s. Long stretches with no transaction are normal — the protocol ' +
+      'windows of the campaign elapse in real chain time.';
+  }
+  const colour = { good: 'var(--good)', warning: 'var(--warning)', critical: 'var(--critical)' }[level];
+  const icon = { good: '●', warning: '▲', critical: '■' }[level];
+  const st = $('h-state');
+  st.innerHTML = '';
+  const w = el('span', null, icon + ' ' + word); w.style.color = colour; st.appendChild(w);
+  $('h-why').textContent = why;
+
+  $('t-height').textContent = NF.format(state.height);
+  $('t-height-s').textContent = advancing === null ? ' ' : (advancing ? 'advancing' : 'unchanged');
+  $('t-age').textContent = age === null ? '—' : age;
+  $('t-int').textContent = med === null ? '—' : med + ' s';
+  $('t-vals').textContent = vals || '—';
+  $('t-peers').textContent = 'peers ' + (peers === null ? 'n/a' : peers);
+  const txsum = rows.txs.reduce((a, r) => a + r.v, 0);
+  $('t-txs').textContent = NF.format(txsum);
+  $('t-txrate').textContent = rows.txs.length + ' blocks in window';
+  $('t-pool').textContent = state.pool === null ? 'n/a' : state.pool;
+  $('t-ing').textContent = NF.format(state.ingestedCount);
+  $('t-ing-s').textContent = state.gapsFilled
+    ? NF.format(state.gapsFilled) + ' filled after a gap'
+    : 'blocks read in order';
+}
+
+function renderProposers(rows) {
+  rows = rows || windowRows();
+  const box = $('proposers');
+  box.innerHTML = '';
+  const counts = {};
+  rows.nums.forEach(n => { const m = state.blocks.get(n).miner; counts[m] = (counts[m] || 0) + 1; });
+  const set = state.validators.map(v => ethers.getAddress(v));
+  const all = set.length ? set : Object.keys(counts);
+  const t = el('table');
+  const hr = el('tr');
+  ['#', 'validator', 'blocks proposed', 'share of window', 'state'].forEach(h => hr.appendChild(el('th', null, h)));
+  t.appendChild(hr);
+  all.forEach(function (a, i) {
+    const c = counts[a] || 0;
+    const share = rows.nums.length ? (100 * c / rows.nums.length) : 0;
+    const tr = el('tr');
+    tr.appendChild(el('td', 'mono', String(i + 1)));
+    tr.appendChild(el('td', 'mono', short(a, 10)));
+    tr.appendChild(el('td', 'num', String(c)));
+    const sc = el('td');
+    const wrap = el('div'); wrap.style.display = 'flex'; wrap.style.alignItems = 'center'; wrap.style.gap = '8px';
+    const m = el('div', 'meter'); m.style.flex = '1'; m.style.margin = '0';
+    const bar = document.createElement('i');
+    bar.style.width = Math.max(2, share).toFixed(0) + '%'; m.appendChild(bar);
+    wrap.appendChild(m); wrap.appendChild(el('span', 'muted', share.toFixed(0) + '%'));
+    sc.appendChild(wrap); tr.appendChild(sc);
+    const st = el('td');
+    st.appendChild(el('span', 'pill ' + (c > 0 ? 'p-good' : 'p-warn'), c > 0 ? '● proposing' : '▲ silent in window'));
+    tr.appendChild(st);
+    t.appendChild(tr);
+  });
+  box.appendChild(t);
+  const cap = el('div', 'sub muted');
+  cap.textContent = 'Last ' + Math.min(40, rows.nums.length) +
+    ' blocks, each cell labelled with the validator that proposed it:';
+  cap.style.marginTop = '10px';
+  box.appendChild(cap);
+  const strip = el('div', 'strip');
+  rows.nums.slice(-40).forEach(function (n, i, arr) {
+    const idx = all.indexOf(state.blocks.get(n).miner);
+    const c = el('div', 'cell' + (i === arr.length - 1 ? ' last' : ''), idx >= 0 ? String(idx + 1) : '?');
+    c.title = 'block ' + n + ' proposed by ' + state.blocks.get(n).miner;
+    strip.appendChild(c);
+  });
+  box.appendChild(strip);
+}
+
+function renderWhatNow() {
+  const box = $('whatnow');
+  box.innerHTML = '';
+  const lin = state.decoded.filter(e => e.path === 'linear');
+  const nl = state.decoded.filter(e => e.path === 'dispute');
+  const lines = [];
+  if (!state.decoded.length) {
+    lines.push(['p-dim', 'no protocol event yet', 'The chain is up; the campaign has not deployed a protocol contract in the scanned range.']);
+  }
+  if (lin.length) {
+    const owners = new Set(lin.filter(e => e.name === 'OwnerKeyRegistered').map(e => String(e.args[0])));
+    const recs = lin.filter(e => e.name === 'RecordAdmitted').length;
+    const bound = lin.filter(e => e.name === 'ResultBound').length;
+    lines.push(['p-lin', 'linear',
+      owners.size + ' owner keys registered, ' + recs + ' encrypted records admitted, ' +
+      bound + ' result' + (bound === 1 ? '' : 's') + ' bound to an output commitment']);
+  }
+  if (nl.length) {
+    const tasks = new Set(nl.filter(e => e.name === 'TaskCreated').map(e => e.args[0]));
+    const chall = new Set(nl.filter(e => e.name === 'ChallengeOpened').map(e => e.args[0]));
+    const done = nl.filter(e => e.name === 'TaskResolved');
+    const roles = nl.filter(e => /Registered$/.test(e.name)).length;
+    lines.push(['p-non', 'non-linear',
+      tasks.size + ' task' + (tasks.size === 1 ? '' : 's') + ' created, ' + chall.size + ' challenged, ' +
+      done.length + ' settled; ' + roles + ' staked role registrations']);
+    const open = Array.from(tasks).filter(id => !done.some(d => d.args[0] === id));
+    if (open.length) {
+      const id = open[open.length - 1];
+      const evs = nl.filter(e => e.args && e.args[0] === id);
+      const last = evs[evs.length - 1];
+      lines.push(['p-dim', 'current task', short(id, 10) + ' — last step: ' +
+        (SAYS[last.name] ? SAYS[last.name](last.args) : last.name) + ' (block ' + last.block + ')']);
+    }
+  }
+  const t = el('table');
+  lines.forEach(function (l) {
+    const tr = el('tr');
+    const c1 = el('td'); c1.appendChild(el('span', 'pill ' + l[0], l[1])); tr.appendChild(c1);
+    tr.appendChild(el('td', null, l[2]));
+    t.appendChild(tr);
+  });
+  box.appendChild(t);
+}
+
+function kv(t, k, v, cls) {
+  const tr = el('tr');
+  tr.appendChild(el('td', 'muted', k));
+  const td = el('td', cls || 'mono');
+  if (v instanceof Node) td.appendChild(v); else td.textContent = v;
+  tr.appendChild(td);
+  t.appendChild(tr);
+  return tr;
+}
+
+/* The live "what is being computed" card. */
+function renderWhatComputed() {
+  const box = $('whatcomputed');
+  box.innerHTML = '';
+  const grid = el('div', 'grid2');
+  let any = false;
+
+  // ---- linear: the contract states its own workload -----------------------
+  const linCard = el('div');
+  linCard.appendChild(el('h2', null, 'Linear path'));
+  const lins = Array.from(state.linearInfo.values()).filter(i => i.datasetRef);
+  if (!lins.length) {
+    linCard.appendChild(el('p', 'muted',
+      'No linear contract answered yet. Each linear experiment deploys a fresh contract; ' +
+      'its description appears here as soon as one is on chain.'));
+  } else {
+    any = true;
+    lins.forEach(function (i) {
+      const t = el('table');
+      kv(t, 'workload', el('b', null, i.datasetRef || '—'));
+      kv(t, 'operation', (LINEAR_OP[i.operation] || ('code ' + i.operation)) +
+        ' — one homomorphic aggregation, fixed at deployment');
+      kv(t, 'dataset size', i.totalItems === null ? '—' :
+        (i.admittedCount + ' of ' + i.totalItems + ' owner-signed records admitted'));
+      if (i.scale) kv(t, 'fixed-point scale', String(i.scale));
+      if (i.datasetTag) kv(t, 'dataset/epoch tag', short(i.datasetTag, 10));
+      kv(t, 'contract', short(i.addr, 10));
+      linCard.appendChild(t);
+      const meter = el('div', 'meter'); const bar = document.createElement('i');
+      bar.style.width = (i.totalItems ? Math.min(100, 100 * i.admittedCount / i.totalItems) : 0).toFixed(0) + '%';
+      meter.appendChild(bar); linCard.appendChild(meter);
+    });
+    linCard.appendChild(el('div', 'sub muted',
+      'What the chain checks here: every record carries a signature by its owner’s registered ' +
+      'key over the commitment to that owner’s ciphertext, and the delivered result is accepted ' +
+      'only if its commitment equals the accumulator of the admitted records. The chain does not ' +
+      'decrypt and does not observe the FHE parameters.'));
+  }
+  grid.appendChild(linCard);
+
+  // ---- non-linear: the operation actually under check ---------------------
+  const nlCard = el('div');
+  nlCard.appendChild(el('h2', null, 'Non-linear path'));
+  const tasks = Array.from(state.taskInfo.entries()).filter(([, i]) => i && !i.unknown && i.status > 0);
+  if (!tasks.length) {
+    nlCard.appendChild(el('p', 'muted',
+      'No dispute-game task answered yet. A task appears here once it is created on chain.'));
+  } else {
+    any = true;
+    // the one that is still moving, else the most recent
+    tasks.sort((a, b) => (a[1].status === 3 ? 1 : 0) - (b[1].status === 3 ? 1 : 0));
+    const [taskId, i] = tasks[0];
+    const t = el('table');
+    const label = taskLabel(taskId);
+    kv(t, 'task', el('b', null, label ? label + '  (' + short(taskId, 8) + ')' : short(taskId, 14)));
+    kv(t, 'state', TASK_STATUS[i.status] + (i.challengeTriggered ? ', challenged' : '') +
+      (i.decision ? ' — ' + DECISION[i.decision] : ''));
+    kv(t, 'computation', i.leafCount === null ? '—' :
+      (i.leafCount + ' micro-instruction leaves committed as one trace root'));
+    if (i.disputeStart !== null && (i.disputeStart || i.disputeEnd)) {
+      kv(t, 'bisection window', i.disputeStart === i.disputeEnd
+        ? ('narrowed to leaf ' + i.disputeStart)
+        : ('leaves ' + i.disputeStart + '–' + i.disputeEnd));
+    }
+    if (i.challengeLeafHint) kv(t, 'challenged leaf hint', String(i.challengeLeafHint));
+    if (i.pending && i.pending.active) {
+      kv(t, 'operation under check', el('b', null, opName(i.pending.opcode) + ' on leaf ' + i.pending.leafIndex));
+      kv(t, 'predicate', opExpr(i.pending.opcode));
+      kv(t, 'deciding contract', short(i.pending.verifier, 10) + ' (FHEVM leaf check)');
+    } else {
+      const done = state.decoded.filter(e => e.args && e.args[0] === taskId &&
+        (e.name === 'LeafCheckedOnChain' || e.name === 'FhevmLeafResolutionFinalized')).pop();
+      if (done) {
+        kv(t, 'operation checked', el('b', null, opName(done.args[2]) + ' on leaf ' + done.args[1]));
+        kv(t, 'predicate', opExpr(done.args[2]));
+        kv(t, 'outcome', 'operator ' + (done.args[3] ? 'valid' : 'INVALID') +
+          ', challenger ' + (done.args[4] ? 'valid' : 'INVALID'));
+      } else {
+        kv(t, 'operation under check', 'none yet — no leaf is in dispute');
+      }
+    }
+    if (i.leaf) {
+      kv(t, 'operand provenance', 'left: ' + (SOURCE_KIND[i.leaf.lhsSource] || '?') +
+        ' · right: ' + (SOURCE_KIND[i.leaf.rhsSource] || '?'));
+      kv(t, 'operand handles', short(i.leaf.lhsHandle, 8) + ', ' + short(i.leaf.rhsHandle, 8) +
+        ' → ' + short(i.leaf.claimedHandle, 8));
+    }
+    nlCard.appendChild(t);
+    nlCard.appendChild(el('div', 'sub muted',
+      'What the chain checks here: the operator committed to this trace before the auditors were ' +
+      'sampled; a challenge forces the whole trace to be disclosed and re-hashed to the committed ' +
+      'root; bisection isolates one leaf, and one verifier contract decides that leaf’s predicate. ' +
+      'The chain does not learn which application produced the trace: no workload name is stored ' +
+      'or emitted by the dispute game.'));
+  }
+  grid.appendChild(nlCard);
+
+  box.appendChild(grid);
+  if (!any) box.appendChild(el('p', 'muted', 'Nothing to describe in the scanned range yet.'));
+}
+
+/* The consensus-tab card: who decides a disputed leaf, and on what runtime. */
+function renderStack() {
+  const box = $('stack');
+  box.innerHTML = '';
+  const infos = Array.from(state.stack.values()).filter(s => !s.unknown);
+  if (!infos.length) {
+    box.textContent = 'no dispute game seen yet';
+    return;
+  }
+  infos.forEach(function (s) {
+    const t = el('table');
+    kv(t, 'dispute game', s.game);
+    kv(t, 'hardened mode', s.secureTraceMode === null ? '—' : (s.secureTraceMode
+      ? 'on — authenticated availability required, the clear fallback verifier is disabled'
+      : 'off — the clear fallback verifier may decide a leaf'));
+    if (s.objectiveVerifier) kv(t, 'clear fallback verifier', short(s.objectiveVerifier, 10));
+    if (s.fhevmVerifier) kv(t, 'FHEVM leaf verifier', short(s.fhevmVerifier, 10));
+    if (s.availabilityModule) kv(t, 'trace availability module', short(s.availabilityModule, 10));
+    if (s.windows && s.windows.commit !== null) {
+      kv(t, 'protocol windows', 'commit ' + s.windows.commit + ' s · open ' + s.windows.open +
+        ' s · challenge ' + s.windows.challenge + ' s');
+    }
+    box.appendChild(t);
+
+    // What the FHEVM runtime is. Stated from what it answers, with the
+    // consequence spelled out, because this is exactly the point on which a
+    // dashboard must not overclaim.
+    const local = s.kms && s.kms.domain === 'LocalFhevmKMSVerifier';
+    const note = el('div', 'card');
+    note.style.marginTop = '10px';
+    const h = el('h2'); h.textContent = 'FHEVM runtime behind the leaf check';
+    const pill = el('span', 'pill ' + (local ? 'p-warn' : 'p-dim'),
+      local ? '▲ local stand-in' : '○ not identified');
+    pill.style.marginLeft = '8px';
+    h.appendChild(pill);
+    note.appendChild(h);
+    const t2 = el('table');
+    if (s.kms) {
+      kv(t2, 'KMS verifier', short(s.kms.address, 10));
+      kv(t2, 'EIP-712 domain', s.kms.domain === null ? 'did not answer' : s.kms.domain);
+      kv(t2, 'threshold', s.kms.threshold === null ? '—' : String(s.kms.threshold));
+    }
+    if (s.executor) kv(t2, 'FHEVM executor', short(s.executor, 10));
+    note.appendChild(t2);
+    note.appendChild(el('div', 'sub muted', local
+      ? 'This deployment runs LocalFhevm*, the in-repository stand-in for the FHEVM ' +
+        'coprocessor and KMS. It models their interfaces so the dispute protocol can be ' +
+        'exercised end to end on a development chain: the leaf check is bound to the ' +
+        'operand handles and settles the dispute objectively, but no TFHE evaluation is ' +
+        'performed on chain, and the executor stores the operand behind each handle in the ' +
+        'clear — the page reads one back below the leaf when a dispute is open. Treat the ' +
+        'on-chain leaf check as evidence about the protocol, not as evidence that a ' +
+        'ciphertext was evaluated. The real-TFHE evidence of the evaluation comes from the ' +
+        'campaign’s own artifacts, not from this chain.'
+      : 'The KMS verifier did not identify itself as the local stand-in. Read its EIP-712 ' +
+        'domain and threshold above before treating the leaf check as a real FHEVM evaluation.'));
+    box.appendChild(note);
+  });
+}
+
+function renderScanNote() {
+  const note = state.decoded.length + ' protocol events in blocks ' +
+    state.scannedFrom + '–' + Math.max(state.scannedTo, state.lastIngested);
+  $('lin-scan').textContent = note;
+  $('nl-scan').textContent = note;
+}
+
+function renderLinear() {
+  const ev = state.decoded.filter(e => e.path === 'linear');
+  const sum = $('lin-summary');
+  const box = $('linear');
+  sum.innerHTML = ''; box.innerHTML = '';
+  if (!ev.length) {
+    sum.appendChild(el('p', 'muted',
+      'No linear-path event in the scanned range. The output-binding and multi-key admission ' +
+      'experiments deploy a fresh contract per run.'));
+    return;
+  }
+  const owners = new Set(ev.filter(e => e.name === 'OwnerKeyRegistered').map(e => String(e.args[0])));
+  const recs = new Set(ev.filter(e => e.name === 'RecordAdmitted').map(e => String(e.args[0])));
+  const bound = ev.filter(e => e.name === 'ResultBound');
+  const pct = owners.size ? (100 * recs.size / owners.size) : 0;
+  const m = el('div');
+  m.appendChild(el('div', 'muted', 'records admitted against registered owners'));
+  const meter = el('div', 'meter'); const bar = document.createElement('i');
+  bar.style.width = Math.min(100, pct).toFixed(0) + '%'; meter.appendChild(bar);
+  m.appendChild(meter);
+  m.appendChild(el('div', null, recs.size + ' of ' + owners.size + ' (' + pct.toFixed(0) + '%) · ' +
+    bound.length + ' result' + (bound.length === 1 ? '' : 's') + ' bound'));
+  sum.appendChild(m);
+
+  const byAddr = {};
+  ev.forEach(e => { (byAddr[e.address] = byAddr[e.address] || []).push(e); });
+  Object.keys(byAddr).forEach(function (addr) {
+    const list = byAddr[addr];
+    const info = state.linearInfo.get(addr);
+    const card = el('div', 'card');
+    const h = el('h2');
+    h.textContent = info && info.datasetRef ? info.datasetRef : ('contract ' + short(addr, 12));
+    if (info && info.operation !== null && info.operation !== undefined) {
+      const p = el('span', 'pill p-lin', (LINEAR_OP[info.operation] || ('op ' + info.operation)) +
+        (info.totalItems ? ' over ' + info.totalItems : ''));
+      p.style.marginLeft = '8px';
+      h.appendChild(p);
+    }
+    card.appendChild(h);
+    card.appendChild(el('div', 'sub', list.length + ' events, blocks ' +
+      Math.min.apply(null, list.map(e => e.block)) + '–' + Math.max.apply(null, list.map(e => e.block)) +
+      ' · contract ' + short(addr, 10)));
+    if (info && info.datasetRef) {
+      const dt = el('table');
+      kv(dt, 'declared workload', info.datasetRef);
+      kv(dt, 'admitted operation', (LINEAR_OP[info.operation] || ('code ' + info.operation)) +
+        ' — the contract admits no other');
+      kv(dt, 'records', info.admittedCount + ' of ' + info.totalItems + ' admitted under an owner key');
+      if (info.scale) kv(dt, 'fixed-point scale', String(info.scale));
+      if (info.datasetTag) kv(dt, 'dataset/epoch tag', short(info.datasetTag, 12));
+      card.appendChild(dt);
+    }
+    const counts = {}; list.forEach(e => counts[e.name] = (counts[e.name] || 0) + 1);
+    const ph = el('div', 'phases');
+    ['StakeDeposited', 'OwnerKeyRegistered', 'RecordAdmitted', 'TaskRegistered', 'ResultBound']
+      .forEach(function (n, i) {
+        const p = el('div', 'phase' + (counts[n] ? ' done' : ''));
+        p.appendChild(el('span', 'n', String(i + 1)));
+        p.appendChild(document.createTextNode(n + (counts[n] ? ' ×' + counts[n] : '')));
+        ph.appendChild(p);
+      });
+    card.appendChild(ph);
+    const rb = list.filter(e => e.name === 'ResultBound');
+    if (rb.length) {
+      const t = el('table');
+      const hr = el('tr'); ['block', 'task', 'output digest', 'commitment', 'operator']
+        .forEach(x => hr.appendChild(el('th', null, x)));
+      t.appendChild(hr);
+      rb.slice(-8).reverse().forEach(function (e) {
+        const a = e.args, tr = el('tr');
+        tr.appendChild(el('td', 'mono', String(e.block)));
+        tr.appendChild(el('td', 'mono', short(a[0], 10)));
+        tr.appendChild(el('td', 'mono', short(a[1], 10)));
+        tr.appendChild(el('td', 'mono', short('0x' + BigInt(a[2][0]).toString(16), 6) + ', ' +
+          short('0x' + BigInt(a[2][1]).toString(16), 6)));
+        tr.appendChild(el('td', 'mono', short(a[3], 6)));
+        t.appendChild(tr);
+      });
+      card.appendChild(t);
+      card.appendChild(el('div', 'sub',
+        'The consumer recomputes this digest and this commitment from the delivered artifact ' +
+        'before decrypting; a substituted output fails that comparison.'));
+    }
+    box.appendChild(card);
+  });
+}
+
+const NL_PHASES = [
+  ['TaskCreated', 'task created'],
+  ['TerminalOutputBound', 'output bound'],
+  ['ParticipantsSampled', 'participants sampled'],
+  ['AuditSubmitted', 'audit committed'],
+  ['VerdictOpened', 'verdict opened'],
+  ['ChallengeOpened', 'challenge opened'],
+  ['DisputeBisected', 'bisection'],
+  ['LeafCheckedOnChain', 'leaf re-executed'],
+  ['TaskResolved', 'settled']
+];
+
+function renderNonLinear() {
+  const ev = state.decoded.filter(e => e.path === 'dispute');
+  const sum = $('nl-summary');
+  const box = $('nonlinear');
+  sum.innerHTML = ''; box.innerHTML = '';
+  if (!ev.length) {
+    sum.appendChild(el('p', 'muted', 'No dispute-game event in the scanned range yet.'));
+    return;
+  }
+  const byTask = {};
+  ev.forEach(function (e) {
+    if (!e.args || typeof e.args[0] !== 'string' || e.args[0].length !== 66) return;
+    (byTask[e.args[0]] = byTask[e.args[0]] || []).push(e);
+  });
+  const ids = Object.keys(byTask);
+  const resolved = ids.filter(id => byTask[id].some(e => e.name === 'TaskResolved'));
+  const challenged = ids.filter(id => byTask[id].some(e => e.name === 'ChallengeOpened'));
+  const slashed = ev.filter(e => /Slashed$/.test(e.name)).length;
+  const st = el('table');
+  [['tasks seen', ids.length], ['challenged', challenged.length],
+   ['settled', resolved.length], ['slashing events', slashed]].forEach(function (r) {
+    const tr = el('tr');
+    tr.appendChild(el('td', 'muted', r[0]));
+    tr.appendChild(el('td', 'num', String(r[1])));
+    st.appendChild(tr);
+  });
+  sum.appendChild(st);
+
+  const roles = ev.filter(e => /Registered$/.test(e.name));
+  if (roles.length) {
+    const c = el('div', 'card');
+    const h = el('h2'); h.textContent = 'staked roles'; c.appendChild(h);
+    c.appendChild(el('div', 'sub',
+      'Operators post the largest stake; auditors may open a bonded challenge; the opening ' +
+      'committee reveals the auditors’ committed verdicts. None of them holds a share of the ' +
+      'FHE decryption key: that key is threshold-shared among the key-management parties.'));
+    const t = el('table');
+    const hr = el('tr'); ['role', 'address', 'stake', 'block'].forEach(x => hr.appendChild(el('th', null, x)));
+    t.appendChild(hr);
+    roles.slice(-16).forEach(function (e) {
+      const tr = el('tr');
+      tr.appendChild(el('td', null, e.name.replace('Registered', '').toLowerCase()));
+      tr.appendChild(el('td', 'mono', short(e.args[0], 10)));
+      tr.appendChild(el('td', 'num', fmtEth(e.args[1])));
+      tr.appendChild(el('td', 'num', String(e.block)));
+      t.appendChild(tr);
+    });
+    c.appendChild(t); box.appendChild(c);
+  }
+
+  ids.sort((a, b) => Math.max.apply(null, byTask[b].map(e => e.block)) -
+                     Math.max.apply(null, byTask[a].map(e => e.block)));
+  ids.slice(0, 30).forEach(function (id) {
+    const list = byTask[id].slice().sort((a, b) => a.block - b.block);
+    const names = new Set(list.map(e => e.name));
+    const res = list.filter(e => e.name === 'TaskResolved').pop();
+    const timeout = list.filter(e => e.name === 'DisputeTimedOut').pop();
+    const bis = list.filter(e => e.name === 'DisputeBisected');
+    const created = list.find(e => e.name === 'TaskCreated');
+    const chall = list.find(e => e.name === 'ChallengeOpened');
+    const leaf = list.filter(e => e.name === 'LeafCheckedOnChain' ||
+      e.name === 'FhevmLeafResolutionFinalized').pop();
+
+    const info = state.taskInfo.get(id);
+    const label = taskLabel(id);
+    const card = el('div', 'card');
+    const h = el('h2'); h.textContent = 'task ' + (label ? label : short(id, 12));
+    let cls = 'p-dim', word = '○ in progress';
+    if (res) {
+      const d = DECISION[Number(res.args[1])] || String(res.args[1]);
+      cls = d === 'operator accepted' ? 'p-good' : 'p-bad';
+      word = (d === 'operator accepted' ? '● ' : '■ ') + d;
+    } else if (timeout) { cls = 'p-warn'; word = '▲ timed out, ' + (DECISION[Number(timeout.args[1])] || ''); }
+    const pill = el('span', 'pill ' + cls, word); pill.style.marginLeft = '8px';
+    h.appendChild(pill);
+    card.appendChild(h);
+    card.appendChild(el('div', 'sub', 'blocks ' + list[0].block + '–' +
+      list[list.length - 1].block + ' · ' + list.length + ' events'));
+
+    const ph = el('div', 'phases');
+    let current = -1;
+    NL_PHASES.forEach((p, i) => { if (names.has(p[0])) current = i; });
+    NL_PHASES.forEach(function (p, i) {
+      const hit = names.has(p[0]);
+      let c = 'phase';
+      if (hit && p[0] === 'ChallengeOpened') c += ' bad';
+      else if (hit) c += (i === current && !res ? ' now' : ' done');
+      const d = el('div', c);
+      d.appendChild(el('span', 'n', String(i + 1)));
+      d.appendChild(document.createTextNode(p[1] +
+        (p[0] === 'DisputeBisected' && bis.length ? ' ×' + bis.length : '')));
+      ph.appendChild(d);
+    });
+    card.appendChild(ph);
+
+    const t = el('table');
+    function row(k, v) { const tr = el('tr');
+      tr.appendChild(el('td', 'muted', k)); tr.appendChild(el('td', 'mono', v)); t.appendChild(tr); }
+    if (created) {
+      row('operator', created.args[1]);
+      row('trace', created.args[3] + ' leaves, root ' + short(created.args[2], 10));
+    }
+    if (chall) { row('challenger', chall.args[1]); row('challenged leaf hint', String(chall.args[3])); }
+    if (bis.length) {
+      const last = bis[bis.length - 1];
+      row('bisection', bis.length + ' rounds, final interval ' + last.args[1] + '–' + last.args[2]);
+    }
+    if (leaf) {
+      row('on-chain leaf check', opName(leaf.args[2]) + ' — ' + opExpr(leaf.args[2]));
+      row('leaf verdict', 'leaf ' + leaf.args[1] + ' · operator ' +
+        (leaf.args[3] ? 'valid' : 'INVALID') + ' · challenger ' + (leaf.args[4] ? 'valid' : 'INVALID'));
+    }
+    // Live contract state for this task, when the game answered.
+    if (info && !info.unknown) {
+      row('contract state', TASK_STATUS[info.status] +
+        (info.challengeTriggered ? ', challenge triggered' : '') +
+        (info.decision ? ' · ' + DECISION[info.decision] : ''));
+      if (info.leafCount) row('trace size', info.leafCount + ' micro-instruction leaves');
+      if (info.disputeStart !== null && (info.disputeStart || info.disputeEnd)) {
+        row('current dispute window', info.disputeStart === info.disputeEnd
+          ? ('leaf ' + info.disputeStart) : ('leaves ' + info.disputeStart + '–' + info.disputeEnd));
+      }
+      if (info.pending && info.pending.active) {
+        row('awaiting FHEVM decision', opName(info.pending.opcode) + ' on leaf ' +
+          info.pending.leafIndex + ' at verifier ' + short(info.pending.verifier, 8));
+      }
+      if (info.leaf) {
+        row('disputed operands', 'left from the ' + (SOURCE_KIND[info.leaf.lhsSource] || '?') +
+          ', right from the ' + (SOURCE_KIND[info.leaf.rhsSource] || '?'));
+        row('operand handles', short(info.leaf.lhsHandle, 8) + ' · ' + short(info.leaf.rhsHandle, 8) +
+          ' → ' + short(info.leaf.claimedHandle, 8));
+        if (info.leaf.lhsPlaintext !== undefined) {
+          row('left operand, read back', info.leaf.lhsPlaintext +
+            ' — the FHEVM runtime of this deployment stores it in the clear');
+        }
+      }
+    }
+    list.filter(e => /Slashed$/.test(e.name)).forEach(function (s) {
+      row(s.name, short(s.args[1], 8) + ' · ' + fmtEth(s.args[3] !== undefined ? s.args[3] : 0));
+    });
+    card.appendChild(t);
+    box.appendChild(card);
+  });
+}
+
+/* ======================================================================== *
+ *  search / inspect
+ * ======================================================================== */
+function decodeLog(l) {
+  const m = topicMap[l.topics[0]];
+  if (!m) return null;
+  try {
+    const p = m.iface.parseLog({ topics: l.topics, data: l.data });
+    const parts = p.fragment.inputs.map(function (inp, i) {
+      let v = p.args[i];
+      if (typeof v === 'bigint') v = v.toString();
+      else if (Array.isArray(v)) v = '[' + v.map(x => x.toString()).join(', ') + ']';
+      return inp.name + '=' + String(v);
+    });
+    return { path: m.path, name: p.name, text: parts.join('  ·  ') };
+  } catch (e) { return null; }
+}
+function logsTable(logs) {
+  if (!logs || !logs.length) return el('p', 'muted', 'no log in this transaction');
+  const t = el('table');
+  const hr = el('tr'); ['#', 'contract', 'event', 'fields'].forEach(x => hr.appendChild(el('th', null, x)));
+  t.appendChild(hr);
+  logs.forEach(function (l, i) {
+    const d = decodeLog(l), tr = el('tr');
+    tr.appendChild(el('td', 'mono', String(i)));
+    tr.appendChild(el('td', 'mono', short(l.address, 8)));
+    const c = el('td');
+    c.appendChild(el('span', 'pill ' + (d ? (d.path === 'linear' ? 'p-lin' : 'p-non') : 'p-dim'),
+      d ? d.name : 'undecoded'));
+    tr.appendChild(c);
+    tr.appendChild(el('td', 'mono', d ? d.text : short(l.topics[0], 10) + ' · ' + (l.data.length - 2) / 2 + ' bytes'));
+    t.appendChild(tr);
+  });
+  return t;
+}
+function openInspect(q) {
+  showTab('inspect');
+  $('q').value = q;
+  lookup(q);
+}
+async function lookup(q) {
+  const box = $('inspect');
+  q = (q || '').trim();
+  if (!q) { box.innerHTML = ''; return; }
+  box.innerHTML = ''; box.appendChild(el('p', 'muted', 'looking up …'));
+  try {
+    if (/^[0-9]+$/.test(q)) return showBlock(await rpc('eth_getBlockByNumber', ['0x' + parseInt(q, 10).toString(16), true]));
+    if (/^0x[0-9a-fA-F]{40}$/.test(q)) return showAccount(ethers.getAddress(q));
+    if (/^0x[0-9a-fA-F]{64}$/.test(q)) {
+      const tx = await rpc('eth_getTransactionByHash', [q]);
+      if (tx) return showTx(tx);
+      const b = await rpc('eth_getBlockByHash', [q, true]);
+      if (b) return showBlock(b);
+    }
+    box.innerHTML = ''; box.appendChild(el('p', 'muted', 'not a block number, a hash, or an address'));
+  } catch (e) { box.innerHTML = ''; box.appendChild(el('p', 'muted', String(e.message || e))); }
+}
+async function showTx(tx) {
+  const r = await rpc('eth_getTransactionReceipt', [tx.hash]).catch(() => null);
+  const ok = r && parseInt(r.status, 16) === 1;
+  if (r) markMined(tx.hash, parseInt(r.blockNumber, 16));
+  if (r && !ok) { const t = state.txs.get(tx.hash); if (t) { t.status = 'failed'; mark('txs'); } }
+  const box = $('inspect'); box.innerHTML = '';
+  const card = el('div', 'card');
+  const h = el('h2'); h.textContent = 'transaction ' + short(tx.hash, 14);
+  h.appendChild(el('span', 'pill ' + (r ? (ok ? 'p-good' : 'p-bad') : 'p-dim'),
+    r ? (ok ? '● success' : '■ reverted') : '▲ pending'));
+  card.appendChild(h);
+  const t = el('table');
+  function row(k, v) { const tr = el('tr'); tr.appendChild(el('td', 'muted', k));
+    tr.appendChild(el('td', 'mono', v)); t.appendChild(tr); }
+  row('block', tx.blockNumber ? String(parseInt(tx.blockNumber, 16)) : 'pending');
+  row('from', tx.from);
+  row('to', tx.to ? tx.to : 'contract creation' + (r && r.contractAddress ? ' → ' + r.contractAddress : ''));
+  row('value', ethers.formatEther(BigInt(tx.value)) + ' ETH');
+  row('gas limit / used', parseInt(tx.gas, 16).toLocaleString() +
+    (r ? ' / ' + parseInt(r.gasUsed, 16).toLocaleString() : ''));
+  row('nonce', String(parseInt(tx.nonce, 16)));
+  row('input', ((tx.input.length - 2) / 2) + ' bytes · selector ' + tx.input.slice(0, 10));
+  card.appendChild(t); box.appendChild(card);
+  const lc = el('div', 'card'); const lh = el('h2'); lh.textContent = 'logs'; lc.appendChild(lh);
+  lc.appendChild(logsTable(r ? r.logs : [])); box.appendChild(lc);
+}
+function showBlock(b) {
+  const box = $('inspect'); box.innerHTML = '';
+  if (!b) { box.appendChild(el('p', 'muted', 'no such block')); return; }
+  const card = el('div', 'card');
+  const h = el('h2'); h.textContent = 'block ' + parseInt(b.number, 16); card.appendChild(h);
+  const t = el('table');
+  function row(k, v) { const tr = el('tr'); tr.appendChild(el('td', 'muted', k));
+    tr.appendChild(el('td', 'mono', v)); t.appendChild(tr); }
+  row('hash', b.hash);
+  row('timestamp', new Date(parseInt(b.timestamp, 16) * 1000).toLocaleString());
+  row('proposer', b.miner);
+  row('gas used / limit', parseInt(b.gasUsed, 16).toLocaleString() + ' / ' + parseInt(b.gasLimit, 16).toLocaleString());
+  row('transactions', String(b.transactions.length));
+  card.appendChild(t); box.appendChild(card);
+  if (b.transactions.length) {
+    const c = el('div', 'card'); const t2 = el('table');
+    const hr = el('tr'); ['hash', 'from', 'to', 'value'].forEach(x => hr.appendChild(el('th', null, x)));
+    t2.appendChild(hr);
+    b.transactions.forEach(function (x) {
+      const tr = el('tr');
+      const a = el('a', 'mono', short(x.hash, 12)); a.href = '#';
+      a.addEventListener('click', ev => { ev.preventDefault(); openInspect(x.hash); });
+      const td = el('td'); td.appendChild(a); tr.appendChild(td);
+      tr.appendChild(el('td', 'mono', short(x.from, 8)));
+      tr.appendChild(el('td', 'mono', x.to ? short(x.to, 8) : 'creation'));
+      tr.appendChild(el('td', 'num', ethers.formatEther(BigInt(x.value))));
+      t2.appendChild(tr);
+    });
+    c.appendChild(t2); box.appendChild(c);
+  }
+}
+async function showAccount(addr) {
+  const [bal, nonce, code] = await Promise.all([
+    rpc('eth_getBalance', [addr, 'latest']), rpc('eth_getTransactionCount', [addr, 'latest']),
+    rpc('eth_getCode', [addr, 'latest'])
+  ]);
+  const isC = code && code !== '0x';
+  const box = $('inspect'); box.innerHTML = '';
+  const card = el('div', 'card');
+  const h = el('h2'); h.textContent = (isC ? 'contract ' : 'account ') + short(addr, 14); card.appendChild(h);
+  const t = el('table');
+  function row(k, v) { const tr = el('tr'); tr.appendChild(el('td', 'muted', k));
+    tr.appendChild(el('td', 'mono', v)); t.appendChild(tr); }
+  row('balance', ethers.formatEther(BigInt(bal)) + ' ETH');
+  row('transactions sent', String(parseInt(nonce, 16)));
+  row('code', isC ? ((code.length - 2) / 2) + ' bytes' : 'none (externally owned)');
+  card.appendChild(t); box.appendChild(card);
+  const mine = state.decoded.filter(function (e) {
+    if (e.address.toLowerCase() === addr.toLowerCase()) return true;
+    return e.args && Array.prototype.some.call(e.args, a =>
+      typeof a === 'string' && a.toLowerCase() === addr.toLowerCase());
+  });
+  const c = el('div', 'card'); const ch = el('h2');
+  ch.textContent = 'protocol events involving this address (' + mine.length + ')';
+  c.appendChild(ch);
+  if (mine.length) {
+    const t2 = el('table');
+    const hr = el('tr'); ['block', 'event', 'contract', 'tx'].forEach(x => hr.appendChild(el('th', null, x)));
+    t2.appendChild(hr);
+    mine.slice(-40).reverse().forEach(function (e) {
+      const tr = el('tr');
+      tr.appendChild(el('td', 'num', String(e.block)));
+      const ec = el('td');
+      ec.appendChild(el('span', 'pill ' + (e.path === 'linear' ? 'p-lin' : 'p-non'), e.name));
+      tr.appendChild(ec);
+      tr.appendChild(el('td', 'mono', short(e.address, 8)));
+      const a = el('a', 'mono', short(e.tx, 10)); a.href = '#';
+      a.addEventListener('click', ev => { ev.preventDefault(); openInspect(e.tx); });
+      const td = el('td'); td.appendChild(a); tr.appendChild(td);
+      t2.appendChild(tr);
+    });
+    c.appendChild(t2);
+  } else { c.appendChild(el('p', 'muted', 'none in the scanned range')); }
+  box.appendChild(c);
+}
+
+async function loadManifest() {
+  const box = $('manifest');
+  try {
+    const r = await fetch('/deployment/deployment.' + state.chainId + '.json');
+    if (!r.ok) throw new Error('not found');
+    const m = await r.json();
+    state.manifest = m;
+    box.innerHTML = '';
+    const t = el('table');
+    const hr = el('tr'); ['contract', 'address'].forEach(x => hr.appendChild(el('th', null, x)));
+    t.appendChild(hr);
+    Object.keys(m.contracts || {}).forEach(function (k) {
+      const tr = el('tr');
+      tr.appendChild(el('td', null, k));
+      tr.appendChild(el('td', 'mono', m.contracts[k]));
+      t.appendChild(tr);
+    });
+    box.appendChild(t);
+    box.appendChild(el('div', 'sub', 'protocol windows: commit ' + m.windows.commit + ' s · open ' +
+      m.windows.open + ' s · challenge ' + m.windows.challenge + ' s · secure trace mode ' + m.secureTraceMode));
+  } catch (e) {
+    box.textContent = 'network/deployment.' + state.chainId +
+      '.json not written yet (the deployment stage writes it). Contracts are still discovered from the chain.';
+  }
+}
+
+/* ======================================================================== *
+ *  slow facts, local clock, tabs
+ * ======================================================================== */
+async function refreshFacts() {
+  try {
+    const [cid, peers] = await Promise.all([
+      rpc('eth_chainId').catch(() => null),
+      rpc('net_peerCount').catch(() => null)
+    ]);
+    if (cid !== null) state.chainId = parseInt(cid, 16);
+    state.peers = peers === null ? null : parseInt(peers, 16);
+    state.validators = await rpc('qbft_getValidatorsByBlockNumber', ['latest']).catch(() => []);
+    state.pool = await rpc('txpool_besuStatistics')
+      .then(s => (s && s.localCount !== undefined) ? Number(s.localCount) + Number(s.remoteCount) : null)
+      .catch(() => null);
+    mark('health');
+  } catch (e) { /* the head path reports connection trouble */ }
+}
+
+/* Reconciliation: in push mode a dropped notification would otherwise leave
+   the page one block behind for ever. This costs one call every 8 s. */
+async function reconcile() {
+  if (link.mode !== 'ws' || document.visibilityState === 'hidden') return;
+  try {
+    const n = parseInt(await rpc('eth_blockNumber'), 16);
+    if (n > state.lastIngested) onHead(n);
+  } catch (e) { /* the socket layer handles its own failures */ }
+}
+
+const RT = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+function tickClock() {
+  const now = Math.floor(Date.now() / 1000);
+  const nums = Array.from(state.blocks.keys());
+  if (nums.length) {
+    const last = state.blocks.get(Math.max.apply(null, nums));
+    $('t-age').textContent = Math.max(0, now - last.ts);
+  }
+  Array.prototype.forEach.call($('stream').children, function (c) {
+    const d = now - Number(c.dataset.ts);
+    c.querySelector('.when').textContent =
+      d < 2 ? 'just now' : (d < 90 ? d + ' s ago' : RT.format(-Math.round(d / 60), 'minute'));
+  });
+  $('clock').textContent = 'updated ' + new Date().toLocaleTimeString();
+}
+
+function showTab(name) {
+  const apply = function () {
+    document.querySelectorAll('nav button').forEach(function (x) {
+      const on = x.dataset.tab === name;
+      x.classList.toggle('on', on);
+      x.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('main section').forEach(x => x.classList.toggle('on', x.id === 's-' + name));
+  };
+  if (document.startViewTransition && !REDUCED) document.startViewTransition(apply);
+  else apply();
+}
+
+function paintLink() {
+  const box = $('link');
+  box.dataset.mode = link.mode;
+  const word = {
+    ws: '● live · websocket',
+    poll: '▲ live · polling 0.7 s',
+    down: '■ not connected',
+    paused: '❚❚ paused'
+  }[link.mode] || link.mode;
+  $('link-word').textContent = word;
+  box.title = link.note || word;
+}
+
+/* ======================================================================== *
+ *  boot
+ * ======================================================================== */
+async function fullScan() {
+  const from = Math.max(0, parseInt($('from').value || '0', 10));
+  const to = state.height;
+  state.decoded = [];
+  state.seenLogs = new Set();
+  const logs = await scanLogs(from, to, Object.keys(topicMap));
+  logs.forEach(absorbLog);
+  sortEvents();
+  state.scannedFrom = from;
+  state.scannedTo = to;
+  rebuildFeed();
+  renderScanNote();
+}
+
+async function bootstrap() {
+  state.booted = false;
+  await refreshFacts();
+  state.height = parseInt(await rpc('eth_blockNumber'), 16);
+  state.prevHeight = -1;
+
+  // Prime the window with the blocks the charts need, without animating them
+  // in one by one: this is history, not live traffic.
+  const win = Number($('win').value);
+  const first = Math.max(0, state.height - win + 1);
+  const nums = [];
+  for (let n = first; n <= state.height; n++) nums.push(n);
+  for (let i = 0; i < nums.length; i += 12) {
+    const part = nums.slice(i, i + 12);
+    const got = await Promise.all(part.map(n =>
+      rpc('eth_getBlockByNumber', ['0x' + n.toString(16), false]).catch(() => null)));
+    got.forEach(function (b) {
+      if (!b) return;
+      state.blocks.set(parseInt(b.number, 16), {
+        ts: parseInt(b.timestamp, 16), txs: b.transactions.length,
+        miner: ethers.getAddress(b.miner), gas: parseInt(b.gasUsed, 16), hash: b.hash
+      });
+    });
+  }
+  await fullScan();
+  await loadManifest();
+
+  // Seed the stream with the tail of the primed window so the panel is not
+  // empty until the next block is sealed. Oldest first, so the newest ends up
+  // on top after each prepend.
+  $('stream').innerHTML = '';
+  const seed = Array.from(state.blocks.keys()).sort((a, b) => a - b).slice(-Math.min(6, STREAM_MAX));
+  seed.forEach(n => pushStream(n, state.blocks.get(n), null, true));
+
+  state.lastIngested = state.height;
+  state.booted = true;
+  mark('health', 'charts', 'proposers', 'paths', 'txs', 'stack');
+  enrich();
+  // Anything sealed while the history was being read is ingested normally.
+  if (wantHead > state.lastIngested) onHead(wantHead);
+}
+
+function defaultWsUrl() {
+  const q = new URLSearchParams(location.search);
+  if (q.has('ws')) return q.get('ws');
+  if (q.has('rpc')) return '';        // an explicit HTTP endpoint: no proxy to assume
+  if (location.protocol === 'file:') return '';
+  return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
+}
+
+function boot() {
+  buildInterfaces();
+  const q = new URLSearchParams(location.search);
+  $('rpc').value = q.get('rpc') || '/rpc';
+  $('ws').value = defaultWsUrl();
+  if (q.has('from')) $('from').value = q.get('from');
+
+  link.addEventListener('mode', paintLink);
+  link.addEventListener('head', e => onHead(e.detail));
+  link.addEventListener('pending', e => onPending(e.detail));
+  link.addEventListener('log', function (e) {
+    const ev = absorbLog(e.detail);
+    if (!ev) return;
+    sortEvents(); pushFeed(ev); mark('paths');
+  });
+  link.addEventListener('trouble', e => showErr(e.detail));
+  link.addEventListener('resync', function () {
+    // After a reconnection the head may have moved on; ask once.
+    rpc('eth_blockNumber').then(h => onHead(parseInt(h, 16))).catch(() => { });
+  });
+
+  function connect() {
+    link.stop();
+    link.configure($('rpc').value.trim(), $('ws').value.trim(), Object.keys(topicMap));
+    link.stopped = false;
+    link.start();
+    paintLink();
+  }
+
+  $('rpc').addEventListener('change', function () {
+    state.blocks.clear(); state.lastIngested = -1; wantHead = -1;
+    $('stream').innerHTML = '';
+    connect(); bootstrap().catch(e => showErr(String(e.message || e)));
+  });
+  $('ws').addEventListener('change', connect);
+  $('win').addEventListener('change', function () {
+    state.blocks.clear();
+    bootstrap().catch(e => showErr(String(e.message || e)));
+  });
+  $('from').addEventListener('change', function () {
+    fullScan().then(() => mark('paths')).catch(e => showErr(String(e.message || e)));
+  });
+  $('reload').addEventListener('click', function () {
+    fullScan().then(() => mark('paths')).catch(e => showErr(String(e.message || e)));
+  });
+  $('pause').addEventListener('click', function () {
+    const on = this.getAttribute('aria-pressed') === 'true';
+    if (on) { this.setAttribute('aria-pressed', 'false'); this.textContent = 'pause'; connect(); }
+    else { this.setAttribute('aria-pressed', 'true'); this.textContent = 'resume'; link.stop(); paintLink(); }
+  });
+  $('go').addEventListener('click', () => lookup($('q').value));
+  $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') lookup(this.value); });
+
+  document.querySelectorAll('nav button').forEach(function (b) {
+    b.addEventListener('click', () => showTab(b.dataset.tab));
+  });
+  document.querySelectorAll('button[data-table]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      const id = b.dataset.table, host = $(id), c = charts[id];
+      if (!c) return;
+      if (host.dataset.view === 'table') {
+        host.dataset.view = 'chart'; b.textContent = 'table'; c.draw(host);
+      } else {
+        host.dataset.view = 'table'; b.textContent = 'chart';
+        host.innerHTML = ''; host.appendChild(tableFor(c.rows, c.head, c.unit));
+      }
+    });
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') reconcile();
+  });
+
+  connect();
+  bootstrap().catch(e => showErr(String(e.message || e)));
+  setInterval(tickClock, 250);
+  setInterval(refreshFacts, 5000);
+  setInterval(reconcile, 8000);
+  // The contract reads that describe the computation. Separate from the block
+  // path on purpose: they must never delay ingestion.
+  setInterval(enrich, ENRICH_MS);
+}
+
+/* ethers: the repository's own copy first, a CDN only if that path 404s. */
+(function () {
+  const s = document.createElement('script');
+  s.src = '/vendor/ethers.umd.min.js';
+  s.onload = boot;
+  s.onerror = function () {
+    const c = document.createElement('script');
+    c.src = 'https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js';
+    c.onload = boot;
+    c.onerror = function () { showErr('could not load the ethers library (no local copy, no internet)'); };
+    document.body.appendChild(c);
+  };
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+diff --git a/core-client/src/decrypt.rs b/core-client/src/decrypt.rs
+index d293af5..824b8c1 100644
+--- a/core-client/src/decrypt.rs
++++ b/core-client/src/decrypt.rs
+@@ -209,6 +209,27 @@ pub(crate) async fn do_public_decrypt<R: Rng + CryptoRng>(
+             )
+             .await?;
+ 
++            // VC-FHE patch: machine-readable per-core result lines so a
++            // relayer can collect each core's external EIP-712 signature and
++            // submit it to an on-chain verifier.
++            for (idx, resp) in resp_response_vec.iter().enumerate() {
++                if let Some(payload) = resp.payload.as_ref() {
++                    let plaintexts = payload
++                        .plaintexts
++                        .iter()
++                        .map(|pt| format!("\"{}\"", hex::encode(&pt.bytes)))
++                        .collect::<Vec<_>>()
++                        .join(",");
++                    println!(
++                        "KMS_CC_EXT_SIG {{\"request_id\":\"{}\",\"response_index\":{},\"external_signature\":\"0x{}\",\"verification_key\":\"0x{}\",\"plaintexts\":[{}]}}",
++                        req_id.as_str(),
++                        idx,
++                        hex::encode(&resp.external_signature),
++                        hex::encode(&payload.verification_key),
++                        plaintexts
++                    );
++                }
++            }
+             let res = format!("{resp_response_vec:x?}");
+             Ok((req_id, res))
+         });
+diff --git a/core-client/src/lib.rs b/core-client/src/lib.rs
+index 0f66a7c..207972b 100644
+--- a/core-client/src/lib.rs
++++ b/core-client/src/lib.rs
+@@ -929,18 +929,50 @@ pub enum KmsType {
+     #[serde(rename = "threshold")]
+     Threshold,
+ }
+-/// a dummy Eip-712 domain for testing
++/// a dummy Eip-712 domain for testing.
++/// VC-FHE patch: the domain can be overridden through environment variables
++/// (KMS_CC_EIP712_NAME, KMS_CC_EIP712_VERSION, KMS_CC_EIP712_CHAIN_ID,
++/// KMS_CC_EIP712_VERIFYING_CONTRACT) so a third-party verifying contract on a
++/// custom chain can verify the cores' external signatures; the server takes
++/// the domain verbatim from the request (kms.v1.Eip712DomainMsg).
+ fn dummy_domain() -> alloy_sol_types::Eip712Domain {
+-    alloy_sol_types::eip712_domain!(
+-        name: "Authorization token",
+-        version: "1",
+-        chain_id: 8006,
+-        verifying_contract: alloy_primitives::address!("66f9664f97F2b50F62D13eA064982f936dE76657"),
++    use std::str::FromStr;
++    let name = std::env::var("KMS_CC_EIP712_NAME")
++        .unwrap_or_else(|_| "Authorization token".to_string());
++    let version =
++        std::env::var("KMS_CC_EIP712_VERSION").unwrap_or_else(|_| "1".to_string());
++    let chain_id: u64 = std::env::var("KMS_CC_EIP712_CHAIN_ID")
++        .ok()
++        .and_then(|v| v.parse().ok())
++        .unwrap_or(8006);
++    let verifying_contract = std::env::var("KMS_CC_EIP712_VERIFYING_CONTRACT")
++        .ok()
++        .and_then(|v| alloy_primitives::Address::from_str(&v).ok())
++        .unwrap_or(alloy_primitives::address!(
++            "66f9664f97F2b50F62D13eA064982f936dE76657"
++        ));
++    alloy_sol_types::Eip712Domain::new(
++        Some(name.into()),
++        Some(version.into()),
++        Some(alloy_primitives::U256::from(chain_id)),
++        Some(verifying_contract),
++        None,
+     )
+ }
+ 
+-// dummy ciphertext handle for testing
++// dummy ciphertext handle for testing.
++// VC-FHE patch: overridable through KMS_CC_EXTERNAL_HANDLE (0x-prefixed or
++// bare hex, 32 bytes), so the signed ctHandles entry can be bound to
++// keccak256 of the actual ciphertext.
+ fn dummy_handle() -> Vec<u8> {
++    if let Ok(raw) = std::env::var("KMS_CC_EXTERNAL_HANDLE") {
++        let stripped = raw.strip_prefix("0x").unwrap_or(&raw);
++        if let Ok(bytes) = hex::decode(stripped) {
++            if bytes.len() == 32 {
++                return bytes;
++            }
++        }
++    }
+     vec![23_u8; 32]
+ }
+ 

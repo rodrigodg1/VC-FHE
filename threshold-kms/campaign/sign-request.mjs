@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import {createRequire} from 'node:module';
+import {inspectKmsRequest} from '../scripts/kms-request-adapter.mjs';
+import {releaseRequestFromWire,signReleaseRequest} from './onchain-policy.mjs';
+const {ethers}=createRequire('/app/fhe-pod/package.json')('ethers');
+const wire=fs.readFileSync(process.argv[2]);
+const getWire=fs.readFileSync(process.argv[3]);
+const {ciphertextCount,...decoded}=inspectKmsRequest(wire);
+if(ciphertextCount!==1)throw Error('only one output');
+const request={...decoded,kmsRequestDigest:ethers.keccak256(wire)};
+if(!/^0x[0-9a-f]{64}$/.test(decoded.consentId))throw Error('missing on-chain consent');
+const releaseRequest=releaseRequestFromWire({consentId:decoded.consentId,decoded,wire,getWire});
+const cfg=JSON.parse(fs.readFileSync('/config/campaign.json','utf8'));
+const policy=JSON.parse(fs.readFileSync('/config/release-policy.json','utf8'));
+const wallet=new ethers.Wallet('0x'+fs.readFileSync('/recipient-identity/signing.hex','utf8').trim());
+if(wallet.address.toLowerCase()!==decoded.recipient.toLowerCase())throw Error('wrong designated recipient');
+const recipientSignature=await signReleaseRequest(wallet,cfg.chainId,policy.address,releaseRequest);
+process.stdout.write(JSON.stringify({request,releaseRequest,recipientSignature}));

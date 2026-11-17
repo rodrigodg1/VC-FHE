@@ -1,0 +1,89 @@
+{
+  "caption": "Test PoC, functional measurements. Recipient payload comparison without cached inputs, with three full cases per size. Bars show means and error bars show sample standard deviations. The baseline input size is a serialization model. The baseline reconstructs its result and need not receive a second aggregate. Authorization and KMS traffic are excluded. These sizes do not measure network latency or total communication.",
+  "rows": [
+    {
+      "group": "linear-acr-10",
+      "size": "10",
+      "metric": "linear_canonical_aggregate_bytes",
+      "series": "Delivered aggregate",
+      "observations": 3,
+      "sourceMean": 592128,
+      "sourceSampleSd": 0.0,
+      "sourceMinimum": 592128,
+      "sourceMaximum": 592128,
+      "scale": 1024,
+      "plottedMean": 578.25,
+      "plottedSampleSd": 0.0
+    },
+    {
+      "group": "linear-acr-16",
+      "size": "16",
+      "metric": "linear_canonical_aggregate_bytes",
+      "series": "Delivered aggregate",
+      "observations": 3,
+      "sourceMean": 592128,
+      "sourceSampleSd": 0.0,
+      "sourceMinimum": 592128,
+      "sourceMaximum": 592128,
+      "scale": 1024,
+      "plottedMean": 578.25,
+      "plottedSampleSd": 0.0
+    },
+    {
+      "group": "linear-acr-27",
+      "size": "27",
+      "metric": "linear_canonical_aggregate_bytes",
+      "series": "Delivered aggregate",
+      "observations": 3,
+      "sourceMean": 592128,
+      "sourceSampleSd": 0.0,
+      "sourceMinimum": 592128,
+      "sourceMaximum": 592128,
+      "scale": 1024,
+      "plottedMean": 578.25,
+      "plottedSampleSd": 0.0
+    },
+    {
+      "group": "linear-acr-10",
+      "size": "10",
+      "metric": "linear_cold_baseline_input_bytes",
+      "series": "Baseline inputs",
+      "observations": 3,
+      "sourceMean": 164480,
+      "sourceSampleSd": 0.0,
+      "sourceMinimum": 164480,
+      "sourceMaximum": 164480,
+      "scale": 1024,
+      "plottedMean": 160.625,
+      "plottedSampleSd": 0.0
+    },
+    {
+      "group": "linear-acr-16",
+      "size": "16",
+      "metric": "linear_cold_baseline_input_bytes",
+      "series": "Baseline inputs",
+      "observations": 3,
+      "sourceMean": 263168,
+      "sourceSampleSd": 0.0,
+      "sourceMinimum": 263168,
+      "sourceMaximum": 263168,
+      "scale": 1024,
+      "plottedMean": 257.0,
+      "plottedSampleSd": 0.0
+    },
+    {
+      "group": "linear-acr-27",
+      "size": "27",
+      "metric": "linear_cold_baseline_input_bytes",
+      "series": "Baseline inputs",
+      "observations": 3,
+      "sourceMean": 444096,
+      "sourceSampleSd": 0.0,
+      "sourceMinimum": 444096,
+      "sourceMaximum": 444096,
+      "scale": 1024,
+      "plottedMean": 433.6875,
+      "plottedSampleSd": 0.0
+    }
+  ]
+}

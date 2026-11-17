@@ -1,0 +1,9 @@
+[package]
+name = "receipt-poll-probe"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ethers = { version = "2.0", default-features = false, features = ["rustls"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+serde = { version = "1.0", features = ["derive"] }

@@ -1,0 +1,149 @@
+{
+  "caption": "Linear verification. (a) Off-chain admission and aggregate verification using commitments and signatures versus BLS signatures and reaggregation. (b) Proposed admissions and result submission (output digest and commitment). Means with sample SD from 100 pairs in (a) and five full cases in (b).",
+  "rows": [
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-10",
+      "cohort": "paired",
+      "series": "Proposed",
+      "mean": 0.7327064790699933,
+      "sample_sd": 0.009729442445923088,
+      "n": 100,
+      "divisor": 1000,
+      "components": "[[\"step2\", \"proposed_verification\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-16",
+      "cohort": "paired",
+      "series": "Proposed",
+      "mean": 0.9943748511899985,
+      "sample_sd": 0.014677396478612463,
+      "n": 100,
+      "divisor": 1000,
+      "components": "[[\"step2\", \"proposed_verification\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-27",
+      "cohort": "paired",
+      "series": "Proposed",
+      "mean": 1.655840847879981,
+      "sample_sd": 0.010263631568910338,
+      "n": 100,
+      "divisor": 1000,
+      "components": "[[\"step2\", \"proposed_verification\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-10",
+      "cohort": "paired",
+      "series": "BLS baseline",
+      "mean": 0.3488332884699956,
+      "sample_sd": 0.006982257581548894,
+      "n": 100,
+      "divisor": 1000,
+      "components": "[[\"step2\", \"baseline_verification\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-16",
+      "cohort": "paired",
+      "series": "BLS baseline",
+      "mean": 0.5638641873099981,
+      "sample_sd": 0.011234795369103788,
+      "n": 100,
+      "divisor": 1000,
+      "components": "[[\"step2\", \"baseline_verification\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-27",
+      "cohort": "paired",
+      "series": "BLS baseline",
+      "mean": 0.9717554582900135,
+      "sample_sd": 0.009182308724593231,
+      "n": 100,
+      "divisor": 1000,
+      "components": "[[\"step2\", \"baseline_verification\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-10",
+      "cohort": "full-honest",
+      "series": "Record admissions",
+      "mean": 6.4450038,
+      "sample_sd": 0.033077133063492435,
+      "n": 5,
+      "divisor": 1000000.0,
+      "components": "[[\"step1_owner_admission\", \"gasUsed\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-16",
+      "cohort": "full-honest",
+      "series": "Record admissions",
+      "mean": 10.2708792,
+      "sample_sd": 0.024421483466407393,
+      "n": 5,
+      "divisor": 1000000.0,
+      "components": "[[\"step1_owner_admission\", \"gasUsed\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-27",
+      "cohort": "full-honest",
+      "series": "Record admissions",
+      "mean": 17.2900386,
+      "sample_sd": 0.0386794480092471,
+      "n": 5,
+      "divisor": 1000000.0,
+      "components": "[[\"step1_owner_admission\", \"gasUsed\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-10",
+      "cohort": "full-honest",
+      "series": "Result submission",
+      "mean": 0.1296572,
+      "sample_sd": 6.5726706900685664e-06,
+      "n": 5,
+      "divisor": 1000000.0,
+      "components": "[[\"step2_result\", \"gasUsed\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-16",
+      "cohort": "full-honest",
+      "series": "Result submission",
+      "mean": 0.1296572,
+      "sample_sd": 6.5726706900685664e-06,
+      "n": 5,
+      "divisor": 1000000.0,
+      "components": "[[\"step2_result\", \"gasUsed\"]]",
+      "display": "plot"
+    },
+    {
+      "figure": "linear-cost",
+      "group": "linear-acr-27",
+      "cohort": "full-honest",
+      "series": "Result submission",
+      "mean": 0.1296572,
+      "sample_sd": 1.0733126291997312e-05,
+      "n": 5,
+      "divisor": 1000000.0,
+      "components": "[[\"step2_result\", \"gasUsed\"]]",
+      "display": "plot"
+    }
+  ]
+}

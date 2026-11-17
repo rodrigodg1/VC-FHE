@@ -1,0 +1,89 @@
+{
+  "caption": "Test PoC, functional measurements. Linear admission and aggregate verification, with 100 paired observations per size. Bars show means and error bars show sample standard deviations, not confidence intervals. The constant-cost final contract check is not timed in isolation. Preparation, recipient verification and decryption are outside these component times.",
+  "rows": [
+    {
+      "group": "linear-acr-10",
+      "size": "10",
+      "metric": "proposed_verification",
+      "series": "Commitment path",
+      "observations": 100,
+      "sourceMean": 10415.27006919004,
+      "sourceSampleSd": 379.00493753505987,
+      "sourceMinimum": 9896.01486099884,
+      "sourceMaximum": 10895.137435998768,
+      "scale": 1,
+      "plottedMean": 10415.27006919004,
+      "plottedSampleSd": 379.00493753505987
+    },
+    {
+      "group": "linear-acr-16",
+      "size": "16",
+      "metric": "proposed_verification",
+      "series": "Commitment path",
+      "observations": 100,
+      "sourceMean": 11124.689132830017,
+      "sourceSampleSd": 431.7537019756764,
+      "sourceMinimum": 10555.918819000944,
+      "sourceMaximum": 11856.035609999672,
+      "scale": 1,
+      "plottedMean": 11124.689132830017,
+      "plottedSampleSd": 431.7537019756764
+    },
+    {
+      "group": "linear-acr-27",
+      "size": "27",
+      "metric": "proposed_verification",
+      "series": "Commitment path",
+      "observations": 100,
+      "sourceMean": 12601.228858260103,
+      "sourceSampleSd": 441.5592071348078,
+      "sourceMinimum": 11999.941314000636,
+      "sourceMaximum": 13139.541940998286,
+      "scale": 1,
+      "plottedMean": 12601.228858260103,
+      "plottedSampleSd": 441.5592071348078
+    },
+    {
+      "group": "linear-acr-10",
+      "size": "10",
+      "metric": "baseline_verification",
+      "series": "BLS + reaggregation",
+      "observations": 100,
+      "sourceMean": 9714.53264352996,
+      "sourceSampleSd": 387.1811136211813,
+      "sourceMinimum": 9207.204458000138,
+      "sourceMaximum": 10300.422912999988,
+      "scale": 1,
+      "plottedMean": 9714.53264352996,
+      "plottedSampleSd": 387.1811136211813
+    },
+    {
+      "group": "linear-acr-16",
+      "size": "16",
+      "metric": "baseline_verification",
+      "series": "BLS + reaggregation",
+      "observations": 100,
+      "sourceMean": 10363.613469939903,
+      "sourceSampleSd": 413.8963948239132,
+      "sourceMinimum": 9834.597216999158,
+      "sourceMaximum": 10934.956609999761,
+      "scale": 1,
+      "plottedMean": 10363.613469939903,
+      "plottedSampleSd": 413.8963948239132
+    },
+    {
+      "group": "linear-acr-27",
+      "size": "27",
+      "metric": "baseline_verification",
+      "series": "BLS + reaggregation",
+      "observations": 100,
+      "sourceMean": 11341.853143489714,
+      "sourceSampleSd": 439.480289395489,
+      "sourceMinimum": 10726.086425002664,
+      "sourceMaximum": 11881.23269700259,
+      "scale": 1,
+      "plottedMean": 11341.853143489714,
+      "plottedSampleSd": 439.480289395489
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+figure,group,cohort,series,mean,sample_sd,n,divisor,components,display
+linear-cost,linear-acr-10,paired,Proposed,10.41527006919004,0.3790049375350599,100,1000,"[[""step2"", ""proposed_verification""]]",plot
+linear-cost,linear-acr-16,paired,Proposed,11.124689132830015,0.4317537019756765,100,1000,"[[""step2"", ""proposed_verification""]]",plot
+linear-cost,linear-acr-27,paired,Proposed,12.601228858260102,0.4415592071348078,100,1000,"[[""step2"", ""proposed_verification""]]",plot
+linear-cost,linear-acr-10,paired,BLS baseline,9.714532643529958,0.38718111362118124,100,1000,"[[""step2"", ""baseline_verification""]]",plot
+linear-cost,linear-acr-16,paired,BLS baseline,10.363613469939903,0.4138963948239132,100,1000,"[[""step2"", ""baseline_verification""]]",plot
+linear-cost,linear-acr-27,paired,BLS baseline,11.341853143489715,0.439480289395489,100,1000,"[[""step2"", ""baseline_verification""]]",plot
+linear-cost,linear-acr-10,full-honest,Record admissions,6.441148666666667,0.016659305817870573,3,1000000.0,"[[""step1_owner_admission"", ""gasUsed""]]",plot
+linear-cost,linear-acr-16,full-honest,Record admissions,10.284843,0.046160895279445974,3,1000000.0,"[[""step1_owner_admission"", ""gasUsed""]]",plot
+linear-cost,linear-acr-27,full-honest,Record admissions,17.275253,0.02752419170475404,3,1000000.0,"[[""step1_owner_admission"", ""gasUsed""]]",plot
+linear-cost,linear-acr-10,full-honest,Result submission,0.129638,1.1999999999998123e-05,3,1000000.0,"[[""step2_result"", ""gasUsed""]]",plot
+linear-cost,linear-acr-16,full-honest,Result submission,0.12964599999999998,6.928203230266413e-06,3,1000000.0,"[[""step2_result"", ""gasUsed""]]",plot
+linear-cost,linear-acr-27,full-honest,Result submission,0.129654,6.928203230282438e-06,3,1000000.0,"[[""step2_result"", ""gasUsed""]]",plot

@@ -1,0 +1,26 @@
+# Shell scripts and the files a Linux toolchain reads MUST keep LF endings.
+# A Windows checkout that converts them to CRLF breaks bash in ways that are
+# hard to diagnose: `set -o pipefail` fails with "invalid option name", and
+# shebangs are not recognised at all.
+*.sh            text eol=lf
+*.bash          text eol=lf
+Dockerfile*     text eol=lf
+*.mjs           text eol=lf
+*.js            text eol=lf
+*.py            text eol=lf
+*.rs            text eol=lf
+*.sol           text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.json          text eol=lf
+*.toml          text eol=lf
+*.md            text eol=lf
+
+# PowerShell accepts LF. Preserve source bytes for the SHA-256 inventory.
+*.ps1           -text
+
+# Datasets and binary artifacts are never converted.
+*.csv           -text
+*.pdf           binary
+*.png           binary
+*.tar.gz        binary

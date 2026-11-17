@@ -1,0 +1,26 @@
+--- a/VC-FHE/distributed/budget.py
++++ b/VC-FHE/distributed/budget.py
+@@ -40,10 +40,12 @@
+     fixed=amount(quote['build_registry'])+amount(quote['retained_resources'])
+     transfers=amount(quote['transfer_storage_upper_bound'])
+     spent=rate*amount(elapsed_hours)+amount(spent_transfer_storage)
+-    projected=spent+rate*hours+transfers+fixed
++    prior=amount(quote.get('prior_experiment_upper_bound_usd',0))
++    projected=prior+spent+rate*hours+transfers+fixed
+     maximum=amount(config['budget']['maximum']);reserve=amount(config['budget']['reserve'])
+     return {'schema':'vcfhe-distributed-budget-v1','status':'admit' if projected+reserve<=maximum else 'refuse',
+         'projected_usd':str(projected),'reserve_usd':str(reserve),'maximum_usd':str(maximum),
+         'hourly_usd':str(rate),'mandatory_window_hours':str(lower_bound),
++        'prior_experiment_upper_bound_usd':str(prior),
+         'quote_sha256':hashlib.sha256(json.dumps(quote,sort_keys=True).encode()).hexdigest(),
+         'billing_hard_cap':False,'changes_protocol_windows':False,'reduces_repetitions':False}
+--- a/VC-FHE/distributed/launch.py
++++ b/VC-FHE/distributed/launch.py
+@@ -255,6 +255,7 @@
+         if not isinstance(self.quote.get('case_allowance_hours'),(int,float)) or self.quote['case_allowance_hours']<=0:
+             raise ValueError('quote must reserve time for a complete in-flight case')
+         fixed=sum(float(self.quote[k]) for k in ['build_registry','retained_resources','transfer_storage_upper_bound'])
++        fixed+=float(budget.amount(self.quote.get('prior_experiment_upper_bound_usd',0)))
+         write(self.run/'participant-config/coordinator-1/budget-runtime.json',{
+             'startedAt':self.state['createdAt'],'plannedHours':float(self.quote['planned_hours']),
+             'caseAllowanceHours':self.quote['case_allowance_hours'],'hourlyUsd':float(self.costs['hourly_usd']),

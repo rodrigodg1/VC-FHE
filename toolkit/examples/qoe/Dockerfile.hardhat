@@ -1,0 +1,27 @@
+# Blockchain-node image: a Hardhat EVM node and nothing else.
+# Pair it with the main `vcfhe` image (Dockerfile), which runs the pipeline
+# and talks to this node over JSON-RPC.
+#
+# Build FROM THE VC-FHE REPOSITORY ROOT:
+#
+#   cd VC-FHE
+#   docker build -f toolkit/examples/qoe/Dockerfile.hardhat -t vcfhe-node .
+#
+# Run:
+#
+#   docker run --rm -p 8545:8545 vcfhe-node
+#
+# Or let docker-compose start both images (see docker-compose.yml).
+
+FROM node:22.10.0-bookworm-slim
+
+WORKDIR /workspace/VC-FHE/fhe-pod
+
+# Only what `npx hardhat node` needs: the pinned Hardhat toolchain and the
+# repository's Hardhat configuration (account/chain-id policy via env vars).
+COPY fhe-pod/package.json fhe-pod/package-lock.json ./
+RUN npm install
+COPY fhe-pod/hardhat.config.js ./
+
+EXPOSE 8545
+CMD ["npx", "hardhat", "node", "--hostname", "0.0.0.0", "--port", "8545"]

@@ -1,0 +1,45 @@
+{
+  "_disclaimer": "DEMONSTRATION ONLY. Every weight, threshold, band edge and cut-off in this file is a DEPLOYMENT PARAMETER chosen by this repository, in the range of such reference values, in order to exercise the dispute pipeline. NONE of them is prescribed by ANATEL. What was verified against the regulation is only the STRUCTURE of the expression: Resolucao 717/2019 Art. 7 defines IQS (item VI), IQP (item VII) and IR (item V), and Art. 11 assigns quality seals A to E. The regulation does NOT publish the F(.) mapping from an indicator to its band, nor the numeric cut-offs; those live in Anexo I / Resolucao Interna 444/2025, which was NOT consulted. This repository therefore does NOT reproduce ANATEL's official numbers and must never be described as doing so.",
+  "_structureSource": "ANATEL Resolucao 717/2019, Art. 7 (IQS, IQP, IR definitions) and Art. 11 (quality seals A-E). Structure only; see _disclaimer.",
+  "_expression": "IQP = ISG; IR = 1000 * A_P / B_P; S = F(IQS) + F(IQP) + F(IR); seal = band(S)",
+  "_schema": "every parameter is an object with a numeric or array 'value' plus a '_note' explaining what it is and where it came from",
+
+  "iqsPoorThresholdMilli": {
+    "value": 2000,
+    "_note": "DEPLOYMENT PARAMETER. Milli-MOS strictly above which a measured session counts as 'good' for the technical indicator IQS. 2000 milli-MOS = 2.0 on the 1-5 MOS scale, the conventional 'poor' boundary of ITU-T P.800-style ACR. It matches the poorThresholdMilli already used by the repository's regulatory-compliance fixture so the two workloads read the same panel the same way. NOT an ANATEL value."
+  },
+  "iqsSessionCount": {
+    "value": 16,
+    "_note": "Size of the technical measurement panel. Fixed by the committed fixture panels.bs1_3000kbps_compliance_16 (16 real drive-test milli-MOS values). Used as the public scalar divisor that turns the good-session count into permille."
+  },
+  "iqpScaleMax": {
+    "value": 5,
+    "_note": "Ceiling of the ACR opinion scale (1-5), per ITU-T P.800 / P.910 absolute category rating. Used as the public scalar divisor that expresses the panel's mean opinion score as a fraction of the scale maximum. This is a property of the rating scale, not an ANATEL parameter."
+  },
+  "iqpPanelSize": {
+    "value": 20,
+    "_note": "Number of distinct human subjects in the perception panel. Fixed by the committed fixture panels.worst_acr_20 of the WebRTC-QoE dataset (20 subjects). Used as the public scalar divisor of the mean."
+  },
+  "complaintsAp": {
+    "value": 384,
+    "_source": "ILLUSTRATIVE PERIOD CONSTANT, not a measured quantity. A_P in the regulation is the number of user complaints recorded against the provider in the assessment period. No complaint register was consulted; 384 was chosen so the demonstration lands in a plausible mid-band. In the trace this is the single ENCRYPTED, authenticated input of the IR stage.",
+    "_note": "DEPLOYMENT PARAMETER / demo input. Numerator of IR = 1000 * A_P / B_P."
+  },
+  "accessBaseBp": {
+    "value": 1600,
+    "_source": "ILLUSTRATIVE PERIOD CONSTANT, not a measured quantity. B_P in the regulation is the provider's access base in the assessment period (the denominator the complaint count is normalised by). No access-base filing was consulted; 1600 was chosen together with complaintsAp purely to produce a mid-band demonstration value.",
+    "_note": "DEPLOYMENT PARAMETER / public scalar. Denominator of IR = 1000 * A_P / B_P. It enters the trace as a PUBLIC scalar divisor (DIV rhs), never as encrypted user data."
+  },
+  "bandEdgesPermille": {
+    "value": [300, 500, 700, 850],
+    "_note": "DEPLOYMENT PARAMETERS. Four ascending permille edges that define F(.). F(x) = |{edge in bandEdgesPermille : x > edge}|, so F takes values 0..4 and is monotone non-decreasing in x. ANATEL does NOT publish this mapping in Res. 717/2019; it is specified in Anexo I / Res. Interna 444/2025, which was not consulted. These four numbers are configuration values chosen in the range of such reference values so that the three indicators of this demonstration land in different bands."
+  },
+  "sealCutoffs": {
+    "value": [2, 4, 6, 9],
+    "_note": "DEPLOYMENT PARAMETERS. Four ascending cut-offs on S = F(IQS) + F(IQP) + F(IR), which ranges over 0..12. sealIndex = |{cutoff in sealCutoffs : S > cutoff}|, so sealIndex ranges over 0..4 and is monotone non-decreasing in S. Art. 11 of Res. 717/2019 establishes five quality seals; the numeric cut-offs that separate them are NOT published there. These are configuration values, not ANATEL cut-offs."
+  },
+  "sealLabels": {
+    "value": ["E", "D", "C", "B", "A"],
+    "_note": "Presentation only: sealIndex 0 is the worst band and sealIndex 4 the best, matching the A-to-E ordering of Art. 11. The labels are attached off-chain for the narration; the trace releases only the integer sealIndex."
+  }
+}

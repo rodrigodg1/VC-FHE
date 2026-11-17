@@ -1,0 +1,12 @@
+scenario,expected_error,reverted,attacker_gas_used
+register_non_subgroup_key,InvalidPublicKey,true,31207
+register_not_on_curve_key,InvalidPublicKey,true,30475
+admit_forged_signature,InvalidSignature,true,172969
+admit_substituted_commitment,InvalidSignature,true,168376
+admit_cross_index_replay,InvalidSignature,true,172971
+admit_cross_tag_signature,InvalidSignature,true,168366
+admit_mauled_signature,InvalidSignature,true,172969
+admit_double_admission,AlreadyAdmitted,true,32448
+submit_before_full_admission,IncompleteAdmission,true,35955
+submit_deviating_output,InvalidResult,true,38465
+register_task_unauthorized,Unauthorized,true,24861

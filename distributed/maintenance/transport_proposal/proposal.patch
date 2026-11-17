@@ -1,0 +1,78 @@
+--- a/VC-FHE/distributed/client.mjs
++++ b/VC-FHE/distributed/client.mjs
+@@ -23,6 +23,30 @@
+     handlerSeconds:result.response.handlerSeconds})+'\n');
+   return result.response.value;
+ }
++const CHUNK_CONCURRENCY=8;
++// Shared across concurrent transfers in this process. Control RPCs do not use
++// these slots. No buffer for a pending chunk is allocated before admission.
++let chunkActive=0;
++const chunkWaiters=[];
++async function chunkSlot(action){
++  if(chunkActive<CHUNK_CONCURRENCY)chunkActive++;
++  else await new Promise(resolve=>chunkWaiters.push(resolve));
++  try{return await action();}
++  finally{const next=chunkWaiters.shift();if(next)next();else chunkActive--;}
++}
++async function forEachChunk(values,action){
++  let index=0,failed=false,failure;
++  await Promise.all(Array.from({length:Math.min(CHUNK_CONCURRENCY,values.length)},async()=>{
++    while(!failed){
++      const current=index++;if(current>=values.length)return;
++      try{await chunkSlot(async()=>{if(!failed)await action(values[current]);});}
++      catch(error){if(!failed){failed=true;failure=error;}}
++    }
++  }));
++  // Drain every admitted operation before reporting failure. A caller cannot
++  // start its task/install while a rejected transfer is still writing chunks.
++  if(failed)throw failure;
++}
+ const cache='/transport/public-chunks';
+ export async function push(target,paths){
+   const rows=await manifest(paths,{cas:cache});
+@@ -33,17 +57,19 @@
+     for(const id of missing){
+       blobId(id);
+       if(!ids.includes(id))throw Error('peer requested a chunk outside this manifest');
++    }
++    await forEachChunk([...new Set(missing)],async id=>{
+       await rpc(target,'put-chunk',{id,data:(await fs.readFile(path.join(cache,id))).toString('base64')});
+-    }
++    });
+   }
+   return rows;
+ }
+ export async function pull(target,rows){
+-  for(const id of new Set(rows.flatMap(r=>r.chunks))){
++  await forEachChunk([...new Set(rows.flatMap(r=>r.chunks))],async id=>{
+     blobId(id);
+     try{await fs.access(path.join(cache,id));}
+     catch(e){if(e.code!=='ENOENT')throw e;const value=await rpc(target,'get-chunk',{id});await putBlob(cache,id,Buffer.from(value.data,'base64'));}
+-  }
++  });
+   await install(rows,cache);
+ }
+ export async function task(target,name,body,inputs=[],outputs=[]){
+--- a/VC-FHE/distributed/public-files.mjs
++++ b/VC-FHE/distributed/public-files.mjs
+@@ -63,8 +63,17 @@
+   blobId(id);
+   if(bytes.length>CHUNK_BYTES||digest(bytes)!==id)throw Error('public chunk integrity mismatch');
+   await fs.mkdir(cas,{recursive:true,mode:0o700});
+-  try{await fs.writeFile(path.join(cas,id),bytes,{flag:'wx',mode:0o600});}
+-  catch(e){if(e.code!=='EEXIST')throw e;if(digest(await fs.readFile(path.join(cas,id)))!==id)throw Error('corrupt cached chunk');}
++  const temporary=path.join(cas,'.'+id+'.'+randomUUID()+'.pending');
++  try{
++    const handle=await fs.open(temporary,'wx',0o600);
++    try{await handle.writeFile(bytes);await handle.sync();}finally{await handle.close();}
++    // Same-directory hardlink publishes a complete verified blob without
++    // replacing an existing CID, including an existing corrupt blob.
++    try{await fs.link(temporary,path.join(cas,id));}
++    catch(e){if(e.code!=='EEXIST')throw e;if(digest(await fs.readFile(path.join(cas,id)))!==id)throw Error('corrupt cached chunk');}
++    const directory=await fs.open(cas,'r');
++    try{await directory.sync();}finally{await directory.close();}
++  }finally{await fs.rm(temporary,{force:true});}
+ }
+ export async function install(rows,cas,{root='/'}={}){
+   if(!Array.isArray(rows))throw Error('public manifest required');

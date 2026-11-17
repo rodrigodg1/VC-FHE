@@ -1,0 +1,19 @@
+group,size,metric,series,observations,sourceMean,sourceSampleSd,sourceMinimum,sourceMaximum,scale,plottedMean,plottedSampleSd
+regulatory_qoe_compliance-16,16,remote_fhe_honest_auditor_complete_cpu_ms,Honest-task audit,3,627.5446666666667,9.506247279201842,616.9000000000001,635.188,1000,0.6275446666666666,0.009506247279201843
+regulatory_qoe_compliance-32,32,remote_fhe_honest_auditor_complete_cpu_ms,Honest-task audit,3,872.7176666666667,7.364034378880495,864.6479999999999,879.074,1000,0.8727176666666667,0.007364034378880495
+regulatory_qoe_compliance-50,50,remote_fhe_honest_auditor_complete_cpu_ms,Honest-task audit,3,812.959,9.712813752975933,806.3,824.1039999999998,1000,0.812959,0.009712813752975932
+regulatory_qoe_compliance-16,16,remote_fhe_honest_baseline_complete_cpu_ms,Two full recomputations,3,1267.1019999999999,12.502231680784089,1259.4389999999999,1281.529,1000,1.267102,0.012502231680784088
+regulatory_qoe_compliance-32,32,remote_fhe_honest_baseline_complete_cpu_ms,Two full recomputations,3,1753.79,10.384892247876113,1741.813,1760.2879999999998,1000,1.75379,0.010384892247876113
+regulatory_qoe_compliance-50,50,remote_fhe_honest_baseline_complete_cpu_ms,Two full recomputations,3,1677.8553333333332,79.68560134888439,1615.539,1767.6419999999998,1000,1.6778553333333333,0.07968560134888439
+regulatory_qoe_compliance-16,16,remote_fhe_challenged_leaf_complete_cpu_ms,Two disputed instructions,3,106.53266666666667,28.586299259143946,88.88,139.514,1000,0.10653266666666666,0.028586299259143945
+regulatory_qoe_compliance-32,32,remote_fhe_challenged_leaf_complete_cpu_ms,Two disputed instructions,3,107.65766666666666,28.787561416926817,89.026,140.814,1000,0.10765766666666665,0.028787561416926816
+regulatory_qoe_compliance-50,50,remote_fhe_challenged_leaf_complete_cpu_ms,Two disputed instructions,3,90.82466666666666,3.286187050874201,87.042,92.97599999999998,1000,0.09082466666666666,0.003286187050874201
+regional_qoe_compliance-16,16,remote_fhe_honest_auditor_complete_cpu_ms,Honest-task audit,3,829.0016666666667,18.693362520780855,813.4979999999999,849.76,1000,0.8290016666666666,0.018693362520780854
+regional_qoe_compliance-32,32,remote_fhe_honest_auditor_complete_cpu_ms,Honest-task audit,3,1264.2973333333332,75.74591392499887,1182.8069999999998,1332.5549999999998,1000,1.2642973333333332,0.07574591392499887
+regional_qoe_compliance-50,50,remote_fhe_honest_auditor_complete_cpu_ms,Honest-task audit,3,2227.937,14.307650680667345,2211.419,2236.471,1000,2.227937,0.014307650680667345
+regional_qoe_compliance-16,16,remote_fhe_honest_baseline_complete_cpu_ms,Two full recomputations,3,1656.516,21.23343740424522,1634.248,1676.536,1000,1.656516,0.021233437404245218
+regional_qoe_compliance-32,32,remote_fhe_honest_baseline_complete_cpu_ms,Two full recomputations,3,2548.916,58.695902403830445,2508.5060000000003,2616.243,1000,2.548916,0.05869590240383044
+regional_qoe_compliance-50,50,remote_fhe_honest_baseline_complete_cpu_ms,Two full recomputations,3,4339.593333333333,27.576169863368182,4317.401,4370.465,1000,4.339593333333333,0.027576169863368184
+regional_qoe_compliance-16,16,remote_fhe_challenged_leaf_complete_cpu_ms,Two disputed instructions,3,89.77433333333333,3.1964632538687745,86.109,91.983,1000,0.08977433333333333,0.0031964632538687746
+regional_qoe_compliance-32,32,remote_fhe_challenged_leaf_complete_cpu_ms,Two disputed instructions,3,91.875,3.313119828801844,88.054,93.94899999999998,1000,0.091875,0.0033131198288018438
+regional_qoe_compliance-50,50,remote_fhe_challenged_leaf_complete_cpu_ms,Two disputed instructions,3,92.446,3.5678140366336275,88.33500000000001,94.734,1000,0.092446,0.0035678140366336274

@@ -1,0 +1,20 @@
+{
+  "schema": "poc-numeric-collection-v1",
+  "scope": "Retained numerical observations; no raw protocol validation or new experiment.",
+  "measuredPairs": 480,
+  "warmups": 18,
+  "fullCases": 45,
+  "originalCsvSha256": {
+    "workflow/receipt-partition.csv": "525acb6dc1361a2fdccfa13645711789bf1e1e8d23100f29451c9ae632b9df38",
+    "workflow/observations.csv": "e2425df54fb34771e0e470deb37a7da636c140b8baab0e54185ec3c583ba8141",
+    "diagnostics/paired-observations.csv": "c76c84495a66353c6bc4ee50b68ec443d0f89da66fd3baa1b0ae9e515316ec67"
+  },
+  "metadataChanges": "Setup and summary retain measurement fields with portable provenance labels.",
+  "files": {
+    "setup.json": "f129739d639696b941886a0a8664ef4fbb49be13f38f91066fd6e1c0b89a5343",
+    "workflow/summary.json": "aff9a9ecb7967114c71e0f95afa981d5c8e03af3f12f895bc6257333ba2857ce",
+    "workflow/receipt-partition.csv": "525acb6dc1361a2fdccfa13645711789bf1e1e8d23100f29451c9ae632b9df38",
+    "workflow/observations.csv": "e2425df54fb34771e0e470deb37a7da636c140b8baab0e54185ec3c583ba8141",
+    "diagnostics/paired-observations.csv": "c76c84495a66353c6bc4ee50b68ec443d0f89da66fd3baa1b0ae9e515316ec67"
+  }
+}

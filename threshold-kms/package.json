@@ -1,0 +1,14 @@
+{
+  "name": "vc-fhe-threshold-kms",
+  "private": true,
+  "type": "module",
+  "description": "Pinned Zama KMS diagnostics, experimental final-output compatibility and retained legacy verdict harness.",
+  "scripts": {
+    "config": "node scripts/generate-client-config.mjs",
+    "opening": "node scripts/run-kms-verdict-opening.mjs",
+    "test": "node --test scripts/threshold-kms.test.mjs scripts/kms-request-adapter.test.mjs scripts/recipient-output-policy.test.mjs contracts/test/release-policy-registry.test.mjs campaign/onchain-policy.test.mjs campaign/policy-init.test.mjs campaign/owner-chain-quorum.test.mjs",
+    "test:request-adapter": "node --test scripts/kms-request-adapter.test.mjs",
+    "test:recipient-policy": "node --test scripts/recipient-output-policy.test.mjs",
+    "test:release-policy": "node --test --test-concurrency=1 contracts/test/release-policy-registry.test.mjs"
+  }
+}

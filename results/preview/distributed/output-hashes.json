@@ -1,0 +1,21 @@
+{
+  "METRICS.md": "238d01e7c0b405d11162d0471350b3c4500c3775b10e23e7bf1c13d7304fe3f1",
+  "decision-timing.json": "81eb6c4e0efc375efabb6831b00fb983bff83ed0e95eacfde0108e9ec64c8163",
+  "linear-cost.csv": "92e3ca7499e65f75088a87a7b596f032d1a29f01d49d493782f686153f5e68f5",
+  "linear-cost.json": "9918ca0e36bba9f5993b2c4108675aba097da935af1ad63d96f89017ef281a33",
+  "linear-cost.pdf": "0465eb631de8dafb45f84b408b8856f6c73d8383fdc153422a05ee32f960c3d2",
+  "linear-cost.png": "027528443e7213c30c59f48ebb2439227a608134eac2e81e82bf576037582a96",
+  "linear-cost.svg": "d29cb8f50d049c6ede72dbc3656482557e5bf46f1dc02ca7e819285e29db53d3",
+  "metrics.csv": "5527173d83a30010ec8b2e95e47757d51b45382b637773757dc51d65e3955170",
+  "nonlinear-work.csv": "aaf666fc2a1e309397e283d6754c4cbf6a4f4e4881eadb00b694d64b184d884c",
+  "nonlinear-work.json": "25a3820091a34122bc9fcdd064879e60f7f96b74548efb40b6ee38619d26091c",
+  "nonlinear-work.pdf": "3158b5b1c3a1ac816f28e0df75d28b756953f0f766f7658a947692f4b5bab5e2",
+  "nonlinear-work.png": "b62aced0f75c92f9598928dc536fcd6f7e8798a65e0b8a5cea896eb8c206dc1c",
+  "nonlinear-work.svg": "ef36e8badfae63ef9155e376f30a25cfab83f1babd25306ecb939fe790605d82",
+  "verification-budget.json": "4700eafe4a43e3400e49b67dbca433f9e3d60b2df79f31bcfae500dd8b14ca1e",
+  "workflow-gas.csv": "d8afab7329a3ae26474d4cbf9da09f80a96820cd74b42d5f643974181d328a05",
+  "workflow-gas.json": "6cc27254cdc79be211823e87bcadb1df0ec2230016763f51647f514f7309d415",
+  "workflow-gas.pdf": "8e4d6be9b9bea95220c8cf3e34b634c27d9fd14a9d084405c949fe29411440aa",
+  "workflow-gas.png": "2119370cee815e4f113b1b3c387139dabda69eaa9274672b729892f7dfd9cb9f",
+  "workflow-gas.svg": "7527cc257cb2176dd8df294f9058b7b2e67974d3e3d6b96a88a61b822a90cbc4"
+}

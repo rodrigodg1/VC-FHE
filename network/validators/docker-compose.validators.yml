@@ -1,0 +1,121 @@
+# Multi-validator EVM chain for VC-FHE (geth, Clique proof-of-authority).
+#
+# One image (ethereum/client-go), N containers. node1 boots as the RPC
+# endpoint and the initial authorized signer; node2/node3 join the same
+# chain and are promoted to validators with one command each (see
+# README.md in this directory for the copy-paste sequence).
+#
+# This is chain-level infrastructure. The VC-FHE protocol is chain-agnostic
+# (the evaluation evaluates on a single development node and makes no
+# multi-validator claim); this compose exists so the same contracts,
+# clients, and evaluation commands can be pointed, unchanged, at a chain
+# with real block production by multiple validators:
+#
+#   RPC_URL=http://127.0.0.1:8546  (linear clients)
+#   VCFHE_RPC_URL / --rpc-url      (fhe-pod tooling, network/run-all.mjs)
+#
+# Dev-only key material: the keystores, password, and P2P node key in
+# ./keys are committed for reproducibility. NEVER reuse them outside a
+# local test network.
+#
+# Quickstart (from this directory):
+#   docker compose -f docker-compose.validators.yml up -d node1
+#   docker compose -f docker-compose.validators.yml up -d node2 node3
+#   # promote node2 and node3 to validators (run once):
+#   docker compose -f docker-compose.validators.yml exec node1 \
+#     geth attach --exec 'clique.propose("0xa58daE1C0254B9212E67B0B494832069a9E77185", true)' /data/geth.ipc
+#   docker compose -f docker-compose.validators.yml exec node1 \
+#     geth attach --exec 'clique.propose("0xAF98C1916D0AFC731cD8E3280A9BFF6a1Bf39C4F", true)' /data/geth.ipc
+#   # after node2 signs its first blocks it should also propose node3, so a
+#   # majority of current signers backs every authorization:
+#   docker compose -f docker-compose.validators.yml exec node2 \
+#     geth attach --exec 'clique.propose("0xAF98C1916D0AFC731cD8E3280A9BFF6a1Bf39C4F", true)' /data/geth.ipc
+#
+# Verify:
+#   docker compose -f docker-compose.validators.yml exec node1 \
+#     geth attach --exec 'clique.getSigners()' /data/geth.ipc
+#   curl -s -X POST -H 'Content-Type: application/json' \
+#     --data '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' \
+#     http://127.0.0.1:8546
+
+x-geth: &geth
+  image: ethereum/client-go:v1.13.15
+  restart: unless-stopped
+
+services:
+  node1:
+    <<: *geth
+    ports:
+      - "8546:8545"   # host 8546, so a local hardhat node on 8545 can coexist
+    volumes:
+      - node1-data:/data
+      - ./genesis.json:/config/genesis.json:ro
+      - ./keys/validator1.json:/config/keystore/validator1.json:ro
+      - ./keys/password.txt:/config/password.txt:ro
+      - ./keys/node1.nodekey:/config/node1.nodekey:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        [ -d /data/geth/chaindata ] || geth init --datadir /data /config/genesis.json
+        cp -f /config/keystore/*.json /data/keystore/ 2>/dev/null || { mkdir -p /data/keystore; cp /config/keystore/*.json /data/keystore/; }
+        exec geth --datadir /data \
+          --networkid 46853 --syncmode full \
+          --nodekey /config/node1.nodekey \
+          --port 30303 \
+          --http --http.addr 0.0.0.0 --http.port 8545 \
+          --http.api eth,net,web3,txpool,clique \
+          --http.vhosts '*' --http.corsdomain '*' \
+          --allow-insecure-unlock \
+          --unlock 0x7A6ceFCBEB6e9Ba7a6d96338059259Fc1395960A \
+          --password /config/password.txt \
+          --mine --miner.etherbase 0x7A6ceFCBEB6e9Ba7a6d96338059259Fc1395960A
+
+  node2:
+    <<: *geth
+    volumes:
+      - node2-data:/data
+      - ./genesis.json:/config/genesis.json:ro
+      - ./keys/validator2.json:/config/keystore/validator2.json:ro
+      - ./keys/password.txt:/config/password.txt:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        [ -d /data/geth/chaindata ] || geth init --datadir /data /config/genesis.json
+        cp -f /config/keystore/*.json /data/keystore/ 2>/dev/null || { mkdir -p /data/keystore; cp /config/keystore/*.json /data/keystore/; }
+        exec geth --datadir /data \
+          --networkid 46853 --syncmode full \
+          --port 30303 \
+          --bootnodes 'enode://fe64d45e0ac0316f19c7740dfb79b77f5efc9563d52738285629855dcd864f6acc21db59cf0dbde66718f21bc23f61edfd2b730edc37b22c54433ece561f48e3@node1:30303' \
+          --allow-insecure-unlock \
+          --unlock 0xa58daE1C0254B9212E67B0B494832069a9E77185 \
+          --password /config/password.txt \
+          --mine --miner.etherbase 0xa58daE1C0254B9212E67B0B494832069a9E77185
+
+  node3:
+    <<: *geth
+    volumes:
+      - node3-data:/data
+      - ./genesis.json:/config/genesis.json:ro
+      - ./keys/validator3.json:/config/keystore/validator3.json:ro
+      - ./keys/password.txt:/config/password.txt:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        [ -d /data/geth/chaindata ] || geth init --datadir /data /config/genesis.json
+        cp -f /config/keystore/*.json /data/keystore/ 2>/dev/null || { mkdir -p /data/keystore; cp /config/keystore/*.json /data/keystore/; }
+        exec geth --datadir /data \
+          --networkid 46853 --syncmode full \
+          --port 30303 \
+          --bootnodes 'enode://fe64d45e0ac0316f19c7740dfb79b77f5efc9563d52738285629855dcd864f6acc21db59cf0dbde66718f21bc23f61edfd2b730edc37b22c54433ece561f48e3@node1:30303' \
+          --allow-insecure-unlock \
+          --unlock 0xAF98C1916D0AFC731cD8E3280A9BFF6a1Bf39C4F \
+          --password /config/password.txt \
+          --mine --miner.etherbase 0xAF98C1916D0AFC731cD8E3280A9BFF6a1Bf39C4F
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:

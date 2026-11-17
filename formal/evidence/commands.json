@@ -1,0 +1,174 @@
+[
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/CanonicalExecution.olean",
+      "VCFHE/CanonicalExecution.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/Bisection.olean",
+      "VCFHE/Bisection.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/Quorum.olean",
+      "VCFHE/Quorum.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/DisputeSafety.olean",
+      "VCFHE/DisputeSafety.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/ReleasePolicy.olean",
+      "VCFHE/ReleasePolicy.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/Composition.olean",
+      "VCFHE/Composition.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/EndToEnd.olean",
+      "VCFHE/EndToEnd.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/AssumptionWitnesses.olean",
+      "VCFHE/AssumptionWitnesses.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/Linear.olean",
+      "VCFHE/Linear.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/GroupedConversion.olean",
+      "VCFHE/GroupedConversion.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/Economics.olean",
+      "VCFHE/Economics.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/AuditPrivacy.olean",
+      "VCFHE/AuditPrivacy.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE/Liveness.olean",
+      "VCFHE/Liveness.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "-o",
+      "<fresh-build>/VCFHE.olean",
+      "VCFHE.lean"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "<fresh-build>/AxiomAudit.lean"
+    ],
+    "returncode": 0,
+    "output": "'VCFHE.AuditPrivacy.public_simulator_exists' depends on axioms: [propext]\n'VCFHE.AuditPrivacy.public_transcript_noninterference' depends on axioms: [propext]\n'VCFHE.Bisection.detection_and_localization' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Bisection.isolates_first' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Canonical.detection' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Canonical.first_difference_exists' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Canonical.first_difference_invalid' does not depend on any axioms\n'VCFHE.Canonical.terminal_agreement' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Canonical.valid_traces_agree' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Composition.failure_containment' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Composition.five_event_error_bound' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Composition.released_plaintext_correct' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Composition.weighted_union_bound' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Dispute.admitted_bounty_settlement' does not depend on any axioms\n'VCFHE.Dispute.admitted_outage_preserves_pending' depends on axioms: [propext, Quot.sound]\n'VCFHE.Dispute.bounty_requires_both_results' does not depend on any axioms\n'VCFHE.Dispute.challenge_blocks_acceptance' depends on axioms: [propext, Quot.sound]\n'VCFHE.Dispute.conditional_trace_soundness' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Dispute.protected_run' depends on axioms: [propext, Quot.sound]\n'VCFHE.Dispute.protected_step' depends on axioms: [propext, Quot.sound]\n'VCFHE.Dispute.rejected_stays_rejected' does not depend on any axioms\n'VCFHE.Economics.challenge_profit_iff' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Economics.coalition_loss' depends on axioms: [propext, Quot.sound]\n'VCFHE.Economics.deterrence_sufficient' depends on axioms: [propext, Quot.sound]\n'VCFHE.Economics.no_fault_no_profit' depends on axioms: [propext, Quot.sound]\n'VCFHE.Economics.operator_gap' depends on axioms: [propext, Quot.sound]\n'VCFHE.Economics.participation_profit_iff' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Economics.winning_margin' depends on axioms: [propext, Quot.sound]\n'VCFHE.EndToEnd.nonlinear_plaintext_error_bound' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.GroupedConversion.carry_conservation' depends on axioms: [propext, Quot.sound]\n'VCFHE.GroupedConversion.digit_range' depends on axioms: [propext, Quot.sound]\n'VCFHE.GroupedConversion.group_capacity' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.GroupedConversion.group_noise_capacity' depends on axioms: [propext, Quot.sound]\n'VCFHE.GroupedConversion.interval_subtraction' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.GroupedConversion.no_top_overflow' depends on axioms: [propext, Quot.sound]\n'VCFHE.GroupedConversion.sub_layout_fits' depends on axioms: [propext, Quot.sound]\n'VCFHE.GroupedConversion.subtotal_fits' depends on axioms: [propext, Quot.sound]\n'VCFHE.GroupedConversion.sum_layout_fits' depends on axioms: [propext, Quot.sound]\n'VCFHE.Linear.balanced_lift_canonical' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Linear.balanced_lift_exact' depends on axioms: [propext, Quot.sound]\n'VCFHE.Linear.collision_exposes_relation' does not depend on any axioms\n'VCFHE.Linear.homomorphic_accumulation' depends on axioms: [propext]\n'VCFHE.Linear.signed_reduction' depends on axioms: [propext, Quot.sound]\n'VCFHE.Linear.strict_decoding_cell' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Liveness.eventual_finality' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Liveness.no_infinite_descent' depends on axioms: [propext, Quot.sound]\n'VCFHE.Liveness.progress_decreases' depends on axioms: [propext, Quot.sound]\n'VCFHE.Quorum.all_faulty_count' depends on axioms: [propext, Quot.sound]\n'VCFHE.Quorum.certified_value_eq' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Quorum.count_le_size' depends on axioms: [propext, Quot.sound]\n'VCFHE.Quorum.full_count_all_true' depends on axioms: [propext, Quot.sound]\n'VCFHE.Quorum.honest_signer_exists' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Quorum.threshold_feasible' depends on axioms: [propext, Quot.sound]\n'VCFHE.Release.authorization_after_consent' depends on axioms: [propext]\n'VCFHE.Release.authorization_after_exact' depends on axioms: [propext]\n'VCFHE.Release.cannot_reserve_twice' does not depend on any axioms\n'VCFHE.Release.initial_invariant' depends on axioms: [propext, Quot.sound]\n'VCFHE.Release.reachable_invariant' depends on axioms: [propext, Quot.sound]\n'VCFHE.Release.step_preserves' depends on axioms: [propext, Quot.sound]\n'VCFHE.Release.threshold_release_authorized' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Release.threshold_release_bound' depends on axioms: [propext, Classical.choice, Quot.sound]\n'VCFHE.Witnesses.approved_state_reachable' depends on axioms: [propext, Quot.sound]\n'VCFHE.Witnesses.authorized_reservation_exists' depends on axioms: [propext, Quot.sound]\n'VCFHE.Witnesses.budget_guard_is_necessary' depends on axioms: [propext, Quot.sound]\n'VCFHE.Witnesses.changed_recipient_requires_authorization' depends on axioms: [propext, Quot.sound]\n'VCFHE.Witnesses.corruption_bound_is_necessary' depends on axioms: [propext, Quot.sound]\n'VCFHE.Witnesses.covered_invalid_execution_rejects' depends on axioms: [propext, Quot.sound]\n'VCFHE.Witnesses.end_to_end_premises_inhabited' depends on axioms: [propext, Quot.sound]\n'VCFHE.Witnesses.reservation_guard_inhabited' depends on axioms: [propext, Quot.sound]\n'VCFHE.Witnesses.uncovered_acceptance_witness' depends on axioms: [propext, Quot.sound]\n"
+  },
+  {
+    "command": [
+      "lean",
+      "--trust=0",
+      "<fresh-build>/Statements.lean"
+    ],
+    "returncode": 0,
+    "output": "@VCFHE.AuditPrivacy.public_simulator_exists : \u2200 {S P R : Type},\n  S \u2192\n    \u2200 (operations : List (S \u2192 P \u2192 R \u2192 P)),\n      (\u2200 (op : S \u2192 P \u2192 R \u2192 P), op \u2208 operations \u2192 VCFHE.AuditPrivacy.PublicOnly op) \u2192\n        \u2203 simulator,\n          \u2200 (secret : S) (public : P) (randomness : R),\n            simulator public randomness = VCFHE.AuditPrivacy.run operations secret public randomness\n@VCFHE.AuditPrivacy.public_transcript_noninterference : \u2200 {S P R : Type} (operations : List (S \u2192 P \u2192 R \u2192 P)),\n  (\u2200 (op : S \u2192 P \u2192 R \u2192 P), op \u2208 operations \u2192 VCFHE.AuditPrivacy.PublicOnly op) \u2192\n    \u2200 (s1 s2 : S) (public : P) (randomness : R),\n      VCFHE.AuditPrivacy.run operations s1 public randomness = VCFHE.AuditPrivacy.run operations s2 public randomness\n@VCFHE.Bisection.detection_and_localization : \u2200 {Cipher : Type} (step : Nat \u2192 VCFHE.Canonical.Trace Cipher \u2192 Cipher),\n  VCFHE.Canonical.PrefixDependent step \u2192\n    \u2200 (height : Nat) (reference operator : VCFHE.Canonical.Trace Cipher),\n      VCFHE.Canonical.Valid step (2 ^ height) reference \u2192\n        \u2200 (differs : Nat \u2192 Nat \u2192 Bool),\n          (\u2200 (lo hi : Nat), differs lo hi = true \u2194 \u2203 j, lo \u2264 j \u2227 j < hi \u2227 operator j \u2260 reference j) \u2192\n            (\u2203 i, i < 2 ^ height \u2227 operator i \u2260 reference i) \u2192\n              let k := VCFHE.Bisection.locate differs 0 height;\n              k < 2 ^ height \u2227 VCFHE.Canonical.FirstDifference operator reference k \u2227 operator k \u2260 step k operator\nVCFHE.Bisection.isolates_first : \u2200 (different : Nat \u2192 Prop) (differs : Nat \u2192 Nat \u2192 Bool),\n  (\u2200 (lo hi : Nat), differs lo hi = true \u2194 \u2203 j, lo \u2264 j \u2227 j < hi \u2227 different j) \u2192\n    \u2200 (k : Nat),\n      (different k \u2227 \u2200 (j : Nat), j < k \u2192 \u00acdifferent j) \u2192\n        \u2200 (height lo : Nat), lo \u2264 k \u2192 k < lo + 2 ^ height \u2192 VCFHE.Bisection.locate differs lo height = k\n@VCFHE.Canonical.detection : \u2200 {Cipher : Type} (step : Nat \u2192 VCFHE.Canonical.Trace Cipher \u2192 Cipher),\n  VCFHE.Canonical.PrefixDependent step \u2192\n    \u2200 (n : Nat) (reference operator : VCFHE.Canonical.Trace Cipher),\n      VCFHE.Canonical.Valid step n reference \u2192\n        (\u2200 (i : Nat), i < n \u2192 operator i = reference i) \u2228\n          \u2203 k, k < n \u2227 VCFHE.Canonical.FirstDifference operator reference k \u2227 operator k \u2260 step k operator\n@VCFHE.Canonical.first_difference_exists : \u2200 {Cipher : Type} (a b : VCFHE.Canonical.Trace Cipher) (n : Nat),\n  (\u2203 i, i < n \u2227 a i \u2260 b i) \u2192 \u2203 k, k < n \u2227 VCFHE.Canonical.FirstDifference a b k\n@VCFHE.Canonical.first_difference_invalid : \u2200 {Cipher : Type} (step : Nat \u2192 VCFHE.Canonical.Trace Cipher \u2192 Cipher),\n  VCFHE.Canonical.PrefixDependent step \u2192\n    \u2200 (reference operator : VCFHE.Canonical.Trace Cipher) (n k : Nat),\n      VCFHE.Canonical.Valid step n reference \u2192\n        k < n \u2192 VCFHE.Canonical.FirstDifference operator reference k \u2192 operator k \u2260 step k operator\n@VCFHE.Canonical.terminal_agreement : \u2200 {Cipher : Type} (step : Nat \u2192 VCFHE.Canonical.Trace Cipher \u2192 Cipher),\n  VCFHE.Canonical.PrefixDependent step \u2192\n    \u2200 (last : Nat) (a b : VCFHE.Canonical.Trace Cipher),\n      VCFHE.Canonical.Valid step (last + 1) a \u2192 VCFHE.Canonical.Valid step (last + 1) b \u2192 a last = b last\n@VCFHE.Canonical.valid_traces_agree : \u2200 {Cipher : Type} (step : Nat \u2192 VCFHE.Canonical.Trace Cipher \u2192 Cipher),\n  VCFHE.Canonical.PrefixDependent step \u2192\n    \u2200 (n : Nat) (a b : VCFHE.Canonical.Trace Cipher),\n      VCFHE.Canonical.Valid step n a \u2192 VCFHE.Canonical.Valid step n b \u2192 \u2200 (i : Nat), i < n \u2192 a i = b i\n@VCFHE.Composition.failure_containment : \u2200 {Outcome : Type}\n  (error coverage binding certificate fhe kms : Outcome \u2192 Prop),\n  (\u2200 (x : Outcome), coverage x \u2192 \u00acbinding x \u2192 \u00accertificate x \u2192 \u00acfhe x \u2192 \u00ackms x \u2192 \u00acerror x) \u2192\n    \u2200 (x : Outcome), error x \u2192 \u00accoverage x \u2228 binding x \u2228 certificate x \u2228 fhe x \u2228 kms x\n@VCFHE.Composition.five_event_error_bound : \u2200 {Outcome : Type} (outcomes : List Outcome) (weight : Outcome \u2192 Nat)\n  (error coverage binding certificate fhe kms : Outcome \u2192 Prop),\n  (\u2200 (x : Outcome), coverage x \u2192 \u00acbinding x \u2192 \u00accertificate x \u2192 \u00acfhe x \u2192 \u00ackms x \u2192 \u00acerror x) \u2192\n    VCFHE.Composition.mass outcomes weight error \u2264\n      (VCFHE.Composition.mass outcomes weight fun x => \u00accoverage x) + VCFHE.Composition.mass outcomes weight binding +\n            VCFHE.Composition.mass outcomes weight certificate +\n          VCFHE.Composition.mass outcomes weight fhe +\n        VCFHE.Composition.mass outcomes weight kms\nVCFHE.Composition.released_plaintext_correct : \u2200 (eval : Nat \u2192 VCFHE.Canonical.Trace Nat \u2192 Nat),\n  VCFHE.Canonical.PrefixDependent eval \u2192\n    \u2200 (last : Nat) (reference operator : VCFHE.Canonical.Trace Nat),\n      VCFHE.Canonical.Valid eval (last + 1) reference \u2192\n        \u2200 (rules : VCFHE.Dispute.Rules),\n          (\u2200 (k : Nat), k < last + 1 \u2192 (rules.operatorValid k = true \u2194 operator k = eval k operator)) \u2192\n            VCFHE.Dispute.Covered rules (last + 1) operator reference VCFHE.Dispute.Phase.accepted \u2192\n              \u2200 (policy : VCFHE.Release.Config) (state : VCFHE.Release.State) (request : VCFHE.Release.Request),\n                (\u2200 (record : Nat), policy.initialSpent record \u2264 policy.limit record) \u2192\n                  VCFHE.Release.Reachable policy state \u2192\n                    \u2200 (q f : Nat) (faulty : Fin q \u2192 Bool),\n                      VCFHE.Quorum.faultyCount q faulty \u2264 f \u2192\n                        f < q \u2192\n                          (\u2200 (i : Fin q), faulty i = false \u2192 request \u2208 state.reserved) \u2192\n                            (request \u2208 state.reserved \u2192 VCFHE.Release.OutputBound policy request) \u2192\n                              policy.acceptedOutput (policy.terms request.consent).task = some (operator last) \u2192\n                                \u2200 (decrypt : Nat \u2192 Nat) (intended plaintext : Nat),\n                                  decrypt (reference last) = intended \u2192\n                                    plaintext = decrypt request.output \u2192\n                                      VCFHE.Release.Authorized policy state request \u2227 plaintext = intended\n@VCFHE.Composition.weighted_union_bound : \u2200 {Outcome : Type} (outcomes : List Outcome) (weight : Outcome \u2192 Nat)\n  (error a b c d e : Outcome \u2192 Prop),\n  (\u2200 (x : Outcome), error x \u2192 a x \u2228 b x \u2228 c x \u2228 d x \u2228 e x) \u2192\n    VCFHE.Composition.mass outcomes weight error \u2264\n      VCFHE.Composition.mass outcomes weight a + VCFHE.Composition.mass outcomes weight b +\n            VCFHE.Composition.mass outcomes weight c +\n          VCFHE.Composition.mass outcomes weight d +\n        VCFHE.Composition.mass outcomes weight e\nVCFHE.Dispute.admitted_bounty_settlement : \u2200 (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim),\n  r.operatorValid c.leaf = false \u2192\n    r.candidateValid c = true \u2192\n      r.evidenceValid c \u2192\n        VCFHE.Dispute.Run r (VCFHE.Dispute.Phase.challenged c) (VCFHE.Dispute.Phase.rejected (some c.auditor))\nVCFHE.Dispute.admitted_outage_preserves_pending : \u2200 (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim)\n  (b : VCFHE.Dispute.Phase),\n  VCFHE.Dispute.Step r (VCFHE.Dispute.Phase.admitted c) b \u2192\n    (b \u2260 VCFHE.Dispute.Phase.auditing \u2227 \u2200 (x : Option Nat), b \u2260 VCFHE.Dispute.Phase.rejected x) \u2192\n      b = VCFHE.Dispute.Phase.admitted c\nVCFHE.Dispute.bounty_requires_both_results : \u2200 (r : VCFHE.Dispute.Rules) (a : VCFHE.Dispute.Phase) (beneficiary : Nat),\n  VCFHE.Dispute.Step r a (VCFHE.Dispute.Phase.rejected (some beneficiary)) \u2192\n    a \u2260 VCFHE.Dispute.Phase.rejected (some beneficiary) \u2192\n      \u2203 c,\n        a = VCFHE.Dispute.Phase.admitted c \u2227\n          c.auditor = beneficiary \u2227 r.operatorValid c.leaf = false \u2227 r.candidateValid c = true\nVCFHE.Dispute.challenge_blocks_acceptance : \u2200 (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim),\n  r.operatorValid c.leaf = false \u2192\n    r.evidenceValid c \u2192\n      r.timely c \u2192 \u00acVCFHE.Dispute.Run r (VCFHE.Dispute.Phase.challenged c) VCFHE.Dispute.Phase.accepted\n@VCFHE.Dispute.conditional_trace_soundness : \u2200 {Cipher : Type} (eval : Nat \u2192 VCFHE.Canonical.Trace Cipher \u2192 Cipher),\n  VCFHE.Canonical.PrefixDependent eval \u2192\n    \u2200 (n : Nat) (reference operator : VCFHE.Canonical.Trace Cipher),\n      VCFHE.Canonical.Valid eval n reference \u2192\n        \u2200 (r : VCFHE.Dispute.Rules),\n          (\u2200 (k : Nat), k < n \u2192 (r.operatorValid k = true \u2194 operator k = eval k operator)) \u2192\n            VCFHE.Dispute.Covered r n operator reference VCFHE.Dispute.Phase.accepted \u2192\n              \u2200 (i : Nat), i < n \u2192 operator i = reference i\nVCFHE.Dispute.protected_run : \u2200 (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim),\n  r.operatorValid c.leaf = false \u2192\n    r.evidenceValid c \u2192\n      r.timely c \u2192\n        \u2200 (a b : VCFHE.Dispute.Phase),\n          VCFHE.Dispute.Protected c a \u2192 VCFHE.Dispute.Run r a b \u2192 VCFHE.Dispute.Protected c b\nVCFHE.Dispute.protected_step : \u2200 (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim),\n  r.operatorValid c.leaf = false \u2192\n    r.evidenceValid c \u2192\n      r.timely c \u2192\n        \u2200 (a b : VCFHE.Dispute.Phase),\n          VCFHE.Dispute.Protected c a \u2192 VCFHE.Dispute.Step r a b \u2192 VCFHE.Dispute.Protected c b\nVCFHE.Dispute.rejected_stays_rejected : \u2200 (r : VCFHE.Dispute.Rules) (beneficiary : Option Nat)\n  (b : VCFHE.Dispute.Phase),\n  VCFHE.Dispute.Run r (VCFHE.Dispute.Phase.rejected beneficiary) b \u2192 b = VCFHE.Dispute.Phase.rejected beneficiary\nVCFHE.Economics.challenge_profit_iff : \u2200 (pReward pBond reward cost bond denominator : Int),\n  0 < pReward * reward - denominator * cost - pBond * bond \u2194 pReward * reward > denominator * cost + pBond * bond\nVCFHE.Economics.coalition_loss : \u2200 (penalty reward feeLimit fee : Int),\n  penalty > reward + feeLimit \u2192 fee \u2264 feeLimit \u2192 penalty - reward - fee > 0\nVCFHE.Economics.deterrence_sufficient : \u2200 (d p reward benefit loss honestCost cheatCost actualCheat : Int),\n  actualCheat \u2264 (d - p) * (reward + benefit) - p * loss - d * cheatCost \u2192\n    p * (loss + reward) > (d - p) * benefit + d * (honestCost - cheatCost) \u2192 d * reward - d * honestCost > actualCheat\nVCFHE.Economics.no_fault_no_profit : \u2200 (cost : Int), cost > 0 \u2192 0 - cost < 0\nVCFHE.Economics.operator_gap : \u2200 (d p reward benefit loss honestCost cheatCost : Int),\n  d * reward - d * honestCost - ((d - p) * (reward + benefit) - p * loss - d * cheatCost) =\n    p * (loss + reward) - (d - p) * benefit - d * (honestCost - cheatCost)\nVCFHE.Economics.participation_profit_iff : \u2200 (pWin reward monitor other losses denominator : Int),\n  0 < pWin * reward - denominator * (monitor + other + losses) \u2194\n    pWin * reward > denominator * (monitor + other + losses)\nVCFHE.Economics.winning_margin : \u2200 (reward feeLimit costLimit fee cost : Int),\n  reward > feeLimit + costLimit \u2192 fee \u2264 feeLimit \u2192 cost \u2264 costLimit \u2192 reward - fee - cost > 0\n@VCFHE.EndToEnd.nonlinear_plaintext_error_bound : \u2200 {Outcome : Type} (outcomes : List Outcome) (weight : Outcome \u2192 Nat)\n  (execution : Outcome \u2192 VCFHE.EndToEnd.Execution) (coverage binding certificate fhe kms : Outcome \u2192 Prop),\n  (\u2200 (x : Outcome), \u00acbinding x \u2192 VCFHE.EndToEnd.BindingOK (execution x)) \u2192\n    (\u2200 (x : Outcome), \u00acbinding x \u2192 \u00accertificate x \u2192 VCFHE.EndToEnd.CertificateOK (execution x)) \u2192\n      (\u2200 (x : Outcome),\n          coverage x \u2192\n            \u00acbinding x \u2192\n              \u00accertificate x \u2192\n                VCFHE.Dispute.Covered (execution x).rules ((execution x).last + 1) (execution x).operator\n                  (execution x).reference VCFHE.Dispute.Phase.accepted) \u2192\n        (\u2200 (x : Outcome),\n            \u00acfhe x \u2192 (execution x).decrypt ((execution x).reference (execution x).last) = (execution x).intended) \u2192\n          (\u2200 (x : Outcome), \u00acbinding x \u2192 \u00ackms x \u2192 VCFHE.EndToEnd.KMSOK (execution x)) \u2192\n            (VCFHE.Composition.mass outcomes weight fun x => (execution x).plaintext \u2260 (execution x).intended) \u2264\n              (VCFHE.Composition.mass outcomes weight fun x => \u00accoverage x) +\n                      VCFHE.Composition.mass outcomes weight binding +\n                    VCFHE.Composition.mass outcomes weight certificate +\n                  VCFHE.Composition.mass outcomes weight fhe +\n                VCFHE.Composition.mass outcomes weight kms\nVCFHE.GroupedConversion.carry_conservation : \u2200 (digits : List Nat) (carry : Nat),\n  VCFHE.GroupedConversion.normalizeValue digits carry = VCFHE.GroupedConversion.value digits + carry\nVCFHE.GroupedConversion.digit_range : \u2200 (total : Nat), total % 4 \u2264 3\nVCFHE.GroupedConversion.group_capacity : \u2200 (members degree carry : Nat),\n  members \u2264 4 \u2192 degree \u2264 3 * members \u2192 carry \u2264 3 \u2192 degree + carry \u2264 15 \u2227 (degree + carry) / 4 \u2264 3\nVCFHE.GroupedConversion.group_noise_capacity : \u2200 (members freshCarry : Nat),\n  members \u2264 4 \u2192 freshCarry \u2264 1 \u2192 members + freshCarry \u2264 5\nVCFHE.GroupedConversion.interval_subtraction : \u2200 (positive negative : Int),\n  0 \u2264 positive - negative \u2192 positive - negative \u2264 511 \u2192 negative \u2264 positive \u2227 positive - negative < 65536\nVCFHE.GroupedConversion.no_top_overflow : \u2200 (total : Nat), total < 65536 \u2192 total % 65536 = total\nVCFHE.GroupedConversion.sub_layout_fits : \u2200 (n : Nat), 1 \u2264 n \u2192 n \u2264 33 \u2192 1 + (n - 1 + 3) / 4 \u2264 9\nVCFHE.GroupedConversion.subtotal_fits : \u2200 (n total : Nat), n \u2264 33 \u2192 total \u2264 n * 511 \u2192 total < 65536\nVCFHE.GroupedConversion.sum_layout_fits : \u2200 (n : Nat), n \u2264 33 \u2192 (n + 3) / 4 \u2264 9\nVCFHE.Linear.balanced_lift_canonical : \u2200 (r s : Int),\n  0 < r \u2192 -r < 2 * s \u2192 2 * s < r \u2192 0 \u2264 VCFHE.Linear.lift r s \u2227 VCFHE.Linear.lift r s < r\nVCFHE.Linear.balanced_lift_exact : \u2200 (r s : Int),\n  0 < r \u2192 -r < 2 * s \u2192 2 * s < r \u2192 VCFHE.Linear.center r (VCFHE.Linear.lift r s) = s\n@VCFHE.Linear.collision_exposes_relation : \u2200 {V G : Type} (P : V \u2192 G) (subV : V \u2192 V \u2192 V) (subG : G \u2192 G \u2192 G) (zeroV : V)\n  (zeroG : G),\n  (\u2200 (a b : V), P (subV a b) = subG (P a) (P b)) \u2192\n    (\u2200 (a b : V), subV a b = zeroV \u2192 a = b) \u2192\n      (\u2200 (g : G), subG g g = zeroG) \u2192\n        \u2200 (actual expected : V),\n          P actual = P expected \u2192 actual \u2260 expected \u2192 subV actual expected \u2260 zeroV \u2227 P (subV actual expected) = zeroG\n@VCFHE.Linear.homomorphic_accumulation : \u2200 {V G : Type} (zeroV : V) (zeroG : G) (addV : V \u2192 V \u2192 V) (addG : G \u2192 G \u2192 G)\n  (P : V \u2192 G),\n  P zeroV = zeroG \u2192\n    (\u2200 (a b : V), P (addV a b) = addG (P a) (P b)) \u2192\n      \u2200 (weightedInputs : List V),\n        P (VCFHE.Linear.aggregate zeroV addV weightedInputs) =\n          VCFHE.Linear.aggregate zeroG addG (List.map P weightedInputs)\nVCFHE.Linear.signed_reduction : \u2200 (r q s : Int),\n  0 < r \u2192 -r < 2 * s \u2192 2 * s < r \u2192 VCFHE.Linear.center r (VCFHE.Linear.lift r s) % q = s % q\nVCFHE.Linear.strict_decoding_cell : \u2200 (delta m noise : Int),\n  0 < delta \u2192\n    -delta < 2 * noise \u2192\n      2 * noise < delta \u2192\n        2 * (delta * m) - delta < 2 * (delta * m + noise) \u2227 2 * (delta * m + noise) < 2 * (delta * m) + delta\nVCFHE.Liveness.eventual_finality : \u2200 (height : Nat) (execution : Nat \u2192 VCFHE.Liveness.State),\n  (\u2200 (i : Nat),\n      execution i \u2260 VCFHE.Liveness.State.final \u2192 VCFHE.Liveness.Progress height (execution i) (execution (i + 1))) \u2192\n    \u2203 i, execution i = VCFHE.Liveness.State.final\nVCFHE.Liveness.no_infinite_descent : \u2200 (f : Nat \u2192 Nat), \u00ac\u2200 (i : Nat), f (i + 1) < f i\nVCFHE.Liveness.progress_decreases : \u2200 (height : Nat) (a b : VCFHE.Liveness.State),\n  VCFHE.Liveness.Progress height a b \u2192 VCFHE.Liveness.rank height b < VCFHE.Liveness.rank height a\nVCFHE.Quorum.all_faulty_count : \u2200 (n : Nat) (faulty : Fin n \u2192 Bool),\n  (\u2200 (i : Fin n), faulty i = true) \u2192 VCFHE.Quorum.faultyCount n faulty = n\n@VCFHE.Quorum.certified_value_eq : \u2200 {Value : Type} (q f : Nat) (faulty : Fin q \u2192 Bool),\n  VCFHE.Quorum.faultyCount q faulty \u2264 f \u2192\n    f < q \u2192\n      \u2200 (certified expected : Value), (\u2200 (i : Fin q), faulty i = false \u2192 certified = expected) \u2192 certified = expected\nVCFHE.Quorum.count_le_size : \u2200 (n : Nat) (flags : Fin n \u2192 Bool), VCFHE.Quorum.faultyCount n flags \u2264 n\nVCFHE.Quorum.full_count_all_true : \u2200 (n : Nat) (flags : Fin n \u2192 Bool),\n  VCFHE.Quorum.faultyCount n flags = n \u2192 \u2200 (i : Fin n), flags i = true\nVCFHE.Quorum.honest_signer_exists : \u2200 (q f : Nat) (faulty : Fin q \u2192 Bool),\n  VCFHE.Quorum.faultyCount q faulty \u2264 f \u2192 f < q \u2192 \u2203 i, faulty i = false\nVCFHE.Quorum.threshold_feasible : \u2200 (n f q : Nat), f < q \u2192 q \u2264 n - f \u2192 2 * f < n\nVCFHE.Release.authorization_after_consent : \u2200 (c : VCFHE.Release.Config) (s : VCFHE.Release.State)\n  (r : VCFHE.Release.Request) (t o : Nat),\n  VCFHE.Release.Authorized c s r \u2192 VCFHE.Release.Authorized c (VCFHE.Release.approveConsent s t o) r\nVCFHE.Release.authorization_after_exact : \u2200 (c : VCFHE.Release.Config) (s : VCFHE.Release.State)\n  (r req : VCFHE.Release.Request) (o : Nat),\n  VCFHE.Release.Authorized c s r \u2192 VCFHE.Release.Authorized c (VCFHE.Release.approveExact s req o) r\nVCFHE.Release.cannot_reserve_twice : \u2200 (c : VCFHE.Release.Config) (s : VCFHE.Release.State) (r : VCFHE.Release.Request),\n  r \u2208 s.reserved \u2192 \u00acVCFHE.Release.Guard c s r\nVCFHE.Release.initial_invariant : \u2200 (c : VCFHE.Release.Config),\n  (\u2200 (record : Nat), c.initialSpent record \u2264 c.limit record) \u2192 VCFHE.Release.Invariant c (VCFHE.Release.initial c)\nVCFHE.Release.reachable_invariant : \u2200 (c : VCFHE.Release.Config),\n  (\u2200 (record : Nat), c.initialSpent record \u2264 c.limit record) \u2192\n    \u2200 (s : VCFHE.Release.State), VCFHE.Release.Reachable c s \u2192 VCFHE.Release.Invariant c s\nVCFHE.Release.step_preserves : \u2200 (c : VCFHE.Release.Config) (s t : VCFHE.Release.State),\n  VCFHE.Release.Invariant c s \u2192 VCFHE.Release.Step c s t \u2192 VCFHE.Release.Invariant c t\nVCFHE.Release.threshold_release_authorized : \u2200 (c : VCFHE.Release.Config) (s : VCFHE.Release.State),\n  (\u2200 (record : Nat), c.initialSpent record \u2264 c.limit record) \u2192\n    VCFHE.Release.Reachable c s \u2192\n      \u2200 (r : VCFHE.Release.Request) (q f : Nat) (faulty : Fin q \u2192 Bool),\n        VCFHE.Quorum.faultyCount q faulty \u2264 f \u2192\n          f < q \u2192 (\u2200 (i : Fin q), faulty i = false \u2192 r \u2208 s.reserved) \u2192 VCFHE.Release.Authorized c s r\nVCFHE.Release.threshold_release_bound : \u2200 (c : VCFHE.Release.Config) (s : VCFHE.Release.State),\n  (\u2200 (record : Nat), c.initialSpent record \u2264 c.limit record) \u2192\n    VCFHE.Release.Reachable c s \u2192\n      \u2200 (r : VCFHE.Release.Request) (q f : Nat) (faulty : Fin q \u2192 Bool),\n        VCFHE.Quorum.faultyCount q faulty \u2264 f \u2192\n          f < q \u2192\n            (\u2200 (i : Fin q), faulty i = false \u2192 r \u2208 s.reserved) \u2192\n              (r \u2208 s.reserved \u2192 VCFHE.Release.OutputBound c r) \u2192\n                VCFHE.Release.Authorized c s r \u2227 VCFHE.Release.OutputBound c r\nVCFHE.Witnesses.approved_state_reachable : \u2200 (c : VCFHE.Release.Config),\n  VCFHE.Release.Reachable c (VCFHE.Witnesses.approvedState c)\nVCFHE.Witnesses.authorized_reservation_exists : \u2203 s,\n  VCFHE.Release.Reachable VCFHE.Witnesses.exampleConfig s \u2227\n    VCFHE.Witnesses.exampleRequest \u2208 s.reserved \u2227\n      s.spent 7 = 1 \u2227 VCFHE.Release.Authorized VCFHE.Witnesses.exampleConfig s VCFHE.Witnesses.exampleRequest\nVCFHE.Witnesses.budget_guard_is_necessary : let c :=\n  let __src := VCFHE.Witnesses.exampleConfig;\n  { terms := __src.terms, owner := __src.owner, limit := __src.limit, initialSpent := fun x => 2,\n    acceptedOutput := __src.acceptedOutput, chainFinality := __src.chainFinality,\n    recipientSigned := __src.recipientSigned, deliveryValid := __src.deliveryValid };\nlet s := VCFHE.Witnesses.approvedState c;\n(VCFHE.Release.reserve c s VCFHE.Witnesses.exampleRequest).spent 7 > c.limit 7 \u2227\n  \u00acVCFHE.Release.Guard c s VCFHE.Witnesses.exampleRequest\nVCFHE.Witnesses.changed_recipient_requires_authorization : let changed :=\n  let __src := VCFHE.Witnesses.exampleRequest;\n  { consent := __src.consent, id := __src.id, key := __src.key, output := __src.output, recipient := 99,\n    recipientKey := __src.recipientKey, wire := __src.wire, query := __src.query, aggregate := __src.aggregate };\n\u00acVCFHE.Release.Guard VCFHE.Witnesses.exampleConfig (VCFHE.Witnesses.approvedState VCFHE.Witnesses.exampleConfig) changed\nVCFHE.Witnesses.corruption_bound_is_necessary : (VCFHE.Quorum.faultyCount 1 fun x => true) = 1 \u2227\n  (\u2200 (i : Fin 1), (fun x => true) i = false \u2192 1 = 0) \u2227 1 \u2260 0\nVCFHE.Witnesses.covered_invalid_execution_rejects : VCFHE.Dispute.Run VCFHE.Witnesses.exampleRules\n    (VCFHE.Dispute.Phase.challenged VCFHE.Witnesses.exampleClaim) (VCFHE.Dispute.Phase.rejected (some 1)) \u2227\n  \u00acVCFHE.Dispute.Run VCFHE.Witnesses.exampleRules (VCFHE.Dispute.Phase.challenged VCFHE.Witnesses.exampleClaim)\n      VCFHE.Dispute.Phase.accepted\nVCFHE.Witnesses.end_to_end_premises_inhabited : VCFHE.EndToEnd.BindingOK VCFHE.Witnesses.completeExecution \u2227\n  VCFHE.EndToEnd.CertificateOK VCFHE.Witnesses.completeExecution \u2227\n    VCFHE.EndToEnd.KMSOK VCFHE.Witnesses.completeExecution \u2227\n      VCFHE.Dispute.Covered VCFHE.Witnesses.completeExecution.rules 1 VCFHE.Witnesses.completeExecution.operator\n          VCFHE.Witnesses.completeExecution.reference VCFHE.Dispute.Phase.accepted \u2227\n        VCFHE.Witnesses.completeExecution.decrypt\n            (VCFHE.Witnesses.completeExecution.reference VCFHE.Witnesses.completeExecution.last) =\n          VCFHE.Witnesses.completeExecution.intended\nVCFHE.Witnesses.reservation_guard_inhabited : VCFHE.Release.Guard VCFHE.Witnesses.exampleConfig\n  (VCFHE.Witnesses.approvedState VCFHE.Witnesses.exampleConfig) VCFHE.Witnesses.exampleRequest\nVCFHE.Witnesses.uncovered_acceptance_witness : VCFHE.Dispute.Run VCFHE.Witnesses.exampleRules\n    VCFHE.Dispute.Phase.auditing VCFHE.Dispute.Phase.accepted \u2227\n  \u00acVCFHE.Dispute.Covered VCFHE.Witnesses.exampleRules 1 (fun x => 1) (fun x => 0) VCFHE.Dispute.Phase.accepted\n"
+  }
+]

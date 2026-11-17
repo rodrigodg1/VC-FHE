@@ -1,0 +1,326 @@
+{
+  "schema": "vcfhe-lean-validation-v1",
+  "verified_at_utc": "2026-11-07T04:48:11.843751+00:00",
+  "lean": "Lean (version 4.19.0, arm64-apple-darwin23.6.0, commit 6caaee842e94, Release)",
+  "trust_level": 0,
+  "status": "passed",
+  "modules": [
+    "VCFHE",
+    "VCFHE.AssumptionWitnesses",
+    "VCFHE.AuditPrivacy",
+    "VCFHE.Bisection",
+    "VCFHE.CanonicalExecution",
+    "VCFHE.Composition",
+    "VCFHE.DisputeSafety",
+    "VCFHE.Economics",
+    "VCFHE.EndToEnd",
+    "VCFHE.GroupedConversion",
+    "VCFHE.Linear",
+    "VCFHE.Liveness",
+    "VCFHE.Quorum",
+    "VCFHE.ReleasePolicy"
+  ],
+  "theorem_count": 70,
+  "theorem_axioms": {
+    "VCFHE.AuditPrivacy.public_simulator_exists": [
+      "propext"
+    ],
+    "VCFHE.AuditPrivacy.public_transcript_noninterference": [
+      "propext"
+    ],
+    "VCFHE.Bisection.detection_and_localization": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Bisection.isolates_first": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Canonical.detection": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Canonical.first_difference_exists": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Canonical.first_difference_invalid": [],
+    "VCFHE.Canonical.terminal_agreement": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Canonical.valid_traces_agree": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Composition.failure_containment": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Composition.five_event_error_bound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Composition.released_plaintext_correct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Composition.weighted_union_bound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Dispute.admitted_bounty_settlement": [],
+    "VCFHE.Dispute.admitted_outage_preserves_pending": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Dispute.bounty_requires_both_results": [],
+    "VCFHE.Dispute.challenge_blocks_acceptance": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Dispute.conditional_trace_soundness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Dispute.protected_run": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Dispute.protected_step": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Dispute.rejected_stays_rejected": [],
+    "VCFHE.Economics.challenge_profit_iff": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Economics.coalition_loss": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Economics.deterrence_sufficient": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Economics.no_fault_no_profit": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Economics.operator_gap": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Economics.participation_profit_iff": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Economics.winning_margin": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.EndToEnd.nonlinear_plaintext_error_bound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.carry_conservation": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.digit_range": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.group_capacity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.group_noise_capacity": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.interval_subtraction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.no_top_overflow": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.sub_layout_fits": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.subtotal_fits": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.GroupedConversion.sum_layout_fits": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Linear.balanced_lift_canonical": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Linear.balanced_lift_exact": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Linear.collision_exposes_relation": [],
+    "VCFHE.Linear.homomorphic_accumulation": [
+      "propext"
+    ],
+    "VCFHE.Linear.signed_reduction": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Linear.strict_decoding_cell": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Liveness.eventual_finality": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Liveness.no_infinite_descent": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Liveness.progress_decreases": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Quorum.all_faulty_count": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Quorum.certified_value_eq": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Quorum.count_le_size": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Quorum.full_count_all_true": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Quorum.honest_signer_exists": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Quorum.threshold_feasible": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Release.authorization_after_consent": [
+      "propext"
+    ],
+    "VCFHE.Release.authorization_after_exact": [
+      "propext"
+    ],
+    "VCFHE.Release.cannot_reserve_twice": [],
+    "VCFHE.Release.initial_invariant": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Release.reachable_invariant": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Release.step_preserves": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Release.threshold_release_authorized": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Release.threshold_release_bound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.approved_state_reachable": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.authorized_reservation_exists": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.budget_guard_is_necessary": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.changed_recipient_requires_authorization": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.corruption_bound_is_necessary": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.covered_invalid_execution_rejects": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.end_to_end_premises_inhabited": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.reservation_guard_inhabited": [
+      "Quot.sound",
+      "propext"
+    ],
+    "VCFHE.Witnesses.uncovered_acceptance_witness": [
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "proof_sources_sha256": {
+    "VCFHE.lean": "99c609086c30d00247983803e5e9e06d8357e04f2934d17d4d9cfc4576a69ff1",
+    "VCFHE/AssumptionWitnesses.lean": "44eed8be9978b57450d0d05c305245164403e3b6e8c216993b2ed2705da28d0d",
+    "VCFHE/AuditPrivacy.lean": "f3817a3413469b351d786ff3f16010e9b876485b364dc78513cd4ca8c3e6f496",
+    "VCFHE/Bisection.lean": "39afdbbd2fcd472e2caed6166920a805e6d104e6c034993131c5cf42c6cdb0f7",
+    "VCFHE/CanonicalExecution.lean": "6bb4aecff3f078ceb6de9650ea95c73e2e18f6affa093d483e9d9e5c7c142be7",
+    "VCFHE/Composition.lean": "e3483b68d92987ae94c0ae46d417733a602c3fc1c2abcae4c0d8b27fb91dcdc5",
+    "VCFHE/DisputeSafety.lean": "31c44d30483269e799fc8cf91cfa2f125123c64f552ee91505bc65a2ba142db4",
+    "VCFHE/Economics.lean": "adec53ace8536de17e745c12dce337269d97e0996c67ecc55f736c7c8e39968a",
+    "VCFHE/EndToEnd.lean": "755b5494808c92fa9fa24dd84082c0b9fbce02f98cf28c7745dba1acef2f062f",
+    "VCFHE/GroupedConversion.lean": "e8cff9d715737abbd223de244dbbc82b35f127e030d015ba0cc637d6f2cc9ec4",
+    "VCFHE/Linear.lean": "dfea97e193a9c4157a7bc2923167fc26195a6aabc7c964829e5379b326b2d9bb",
+    "VCFHE/Liveness.lean": "41f1a2c193be650f556a0f8f4a98c011e20d4fc88ba19c517fab5d54f1d3e0e4",
+    "VCFHE/Quorum.lean": "c41cf8937dcc1c7f5743b80553437e01cebd307b70f7c2019bacb57826f64158",
+    "VCFHE/ReleasePolicy.lean": "c917876f267ee276ea1eafc610456138c52788388d171839e25a24bd87e865d4"
+  },
+  "source_manifest_sha256": "955cfcce8af5c48fbc886197281285c7eb5ae9fae7fd81ed932f45865e8aa82d",
+  "checker_sha256": "2344ffca301b059c678e2f462aec542873bd06844716164f430986e60f9775dd",
+  "mapped_source_count": 19,
+  "scope": "Kernel-checked protocol models with reviewed, hash-pinned source correspondence"
+}

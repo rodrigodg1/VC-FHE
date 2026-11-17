@@ -1,0 +1,39 @@
+# Two images, one command:
+#   - hardhat : blockchain-node image (Dockerfile.hardhat), an EVM node only
+#   - qoe     : pipeline image (Dockerfile), runs the computation and the
+#               verification against the node over JSON-RPC
+#
+# Usage (from VC-FHE/toolkit/examples/qoe):
+#
+#   docker compose up -d hardhat        # 1. blockchain node on :8545
+#   docker compose run --rm qoe         # 2. shell with HARDHAT_RPC preset
+#     npm run cases:generate            # compute: derive cases from real CSVs
+#     npm run demo:linear               # compute + verify on the external node
+#     SKIP_FHE_CORRECTNESS=1 npm run demo:alarm        # non-linear dispute
+#     SKIP_FHE_CORRECTNESS=1 npm run demo:regulatory   # non-linear dispute
+#     npm test                          # verify: end-to-end assertions
+#   docker compose down
+#
+# The non-linear demos manage their own EVM lifecycle through the fhe-pod
+# tooling and do not read HARDHAT_RPC; run them in the same `qoe` shell.
+
+services:
+  hardhat:
+    build:
+      context: ../../..
+      dockerfile: toolkit/examples/qoe/Dockerfile.hardhat
+    ports:
+      - "8545:8545"
+
+  qoe:
+    build:
+      context: ../../..
+      dockerfile: toolkit/examples/qoe/Dockerfile
+    working_dir: /workspace/VC-FHE/toolkit/examples/qoe
+    environment:
+      - HARDHAT_RPC=http://hardhat:8545
+    depends_on:
+      - hardhat
+    stdin_open: true
+    tty: true
+    command: bash

@@ -1,0 +1,59 @@
+{
+  "schema": "vcfhe-proof-checker-controls-v1",
+  "status": "passed",
+  "checked_cases": 7,
+  "cases": [
+    {
+      "case": "unfinished-proof",
+      "expected": "rejected",
+      "observed_exit": 1,
+      "diagnostic_matched": "Proof source gate",
+      "passed": true
+    },
+    {
+      "case": "custom-axiom",
+      "expected": "rejected",
+      "observed_exit": 1,
+      "diagnostic_matched": "Proof source gate",
+      "passed": true
+    },
+    {
+      "case": "false-proof",
+      "expected": "rejected",
+      "observed_exit": 1,
+      "diagnostic_matched": "tactic 'rfl' failed",
+      "passed": true
+    },
+    {
+      "case": "changed-mapped-source",
+      "expected": "rejected",
+      "observed_exit": 1,
+      "diagnostic_matched": "Source correspondence requires review",
+      "passed": true
+    },
+    {
+      "case": "five-member-group",
+      "expected": "rejected",
+      "observed_exit": 1,
+      "diagnostic_matched": "omega could not prove the goal",
+      "passed": true,
+      "counterexample": "members=5, degree=15, carry=3 exceeds capacity 15"
+    },
+    {
+      "case": "rounding-boundary",
+      "expected": "rejected",
+      "observed_exit": 1,
+      "diagnostic_matched": "omega could not prove the goal",
+      "passed": true,
+      "counterexample": "delta=2, m=0, noise=1 reaches the upper decoding boundary"
+    },
+    {
+      "case": "reusable-failed-challenger",
+      "expected": "rejected",
+      "observed_exit": 1,
+      "diagnostic_matched": "omega could not prove the goal",
+      "passed": true,
+      "counterexample": "audit(n+1), bisection(n,height), pending(n), audit(n+1) forms a cycle"
+    }
+  ]
+}

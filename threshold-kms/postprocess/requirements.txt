@@ -1,0 +1,2 @@
+# Plotting only. Statistical methods are loaded from the sealed measurement source.
+matplotlib==3.10.8

@@ -1,0 +1,47 @@
+{
+  "schema": "poc-distribution-checks-v1",
+  "checkedAt": "2026-11-01",
+  "tests": {
+    "campaignPython": 198,
+    "postprocessPython": 37,
+    "localRecoveryPython": 41,
+    "cloudPython": 397,
+    "zeroReleaseRecoveryPython": 22,
+    "completedPrefixRecoveryPython": 25,
+    "distributedNode": 42
+  },
+  "totalPassed": 762,
+  "terraformValidation": "passed",
+  "dockerComposeConfiguration": "passed",
+  "freshFullExecution": false,
+  "numericalCollections": {
+    "local": {
+      "observations": 11266,
+      "metrics": 1504
+    },
+    "distributed": {
+      "observations": 8392,
+      "metrics": 1504
+    }
+  },
+  "limitationsDocument": "docs/VALIDATION.md",
+  "retainedCloudCopy": {
+    "mainPlots": 3,
+    "supplementaryPlots": 5,
+    "diagnosticPlots": 9,
+    "unchangedCopiedFiles": 35,
+    "supplementaryRowsMatchedToSummary": 54,
+    "economicAccountReferencesReplaced": 144,
+    "economicRowsWithUnchangedQuantities": 18,
+    "regeneratedNumericalFilesMatchedToPreview": 10,
+    "privacyNegativeChecksPassed": 5,
+    "mediaInspected": {
+      "png": 20,
+      "pdf": 11,
+      "svg": 11,
+      "gzip": 2
+    },
+    "originalFilesVerifiedUnchanged": 3794,
+    "scope": "Local result copy, numerical and metadata checks. No new cloud execution or publication."
+  }
+}

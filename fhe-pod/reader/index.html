@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FHE-POD Reader</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+    <div class="app">
+      <main class="reader-shell">
+        <header class="reader-toolbar">
+          <div class="toolbar-group">
+            <button id="indexButton" type="button" title="Página inicial">Índice</button>
+            <button id="prevButton" type="button">← Anterior</button>
+            <button id="nextButton" type="button">Próximo →</button>
+          </div>
+
+          <div class="toolbar-group reading-controls" aria-label="Controles de leitura">
+            <label class="toolbar-search">
+              <span>Buscar</span>
+              <input id="searchInput" type="search" placeholder="Título, seção ou termo..." />
+            </label>
+            <button id="decreaseFont" type="button" title="Diminuir texto">A−</button>
+            <button id="increaseFont" type="button" title="Aumentar texto">A+</button>
+            <button id="widthButton" type="button" title="Alternar largura">Largura</button>
+            <button id="refreshButton" type="button" title="Atualizar documentos">↻</button>
+            <select id="themeSelect" title="Tema">
+              <option value="experiment">Papel</option>
+              <option value="white">Claro</option>
+              <option value="dark">Escuro</option>
+            </select>
+            <label class="auto-refresh">
+              <input id="autoRefresh" type="checkbox" checked />
+              Auto
+            </label>
+          </div>
+        </header>
+
+        <evaluation class="book-page" id="bookPage">
+          <div class="chapter-meta" id="chapterMeta"></div>
+          <div class="markdown" id="content"></div>
+        </evaluation>
+      </main>
+
+      <aside class="outline" aria-label="Sumário">
+        <section>
+          <h2>Sumário</h2>
+          <nav id="outlineList"></nav>
+        </section>
+        <section>
+          <h2>Estado</h2>
+          <p id="readerState">Carregando docs...</p>
+        </section>
+      </aside>
+    </div>
+
+    <script src="/vendor/mermaid/mermaid.min.js"></script>
+    <script src="/vendor/marked/marked.umd.js"></script>
+    <script src="/reader.js" type="module"></script>
+  </body>
+</html>

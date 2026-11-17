@@ -1,0 +1,27 @@
+{
+  "_disclaimer": "TEACHING EXAMPLE. The three values below are arbitrary. They were chosen only so that the expression exercises what it has to exercise, and nothing here is measured, regulated or part of the implementation's evaluated workload set. The point of this example is the PROCESS a computation goes through, not the numbers it produces.",
+
+  "_expression": "total = x + y * z",
+
+  "_precedence": "Standard precedence: y * z first, then the addition of x. That is what fixes the order of the leaves, and the order of the leaves is what the protocol commits to.",
+
+  "_whyThisShape": "Two operations are the shortest trace that still passes through every stage of the protocol. MUL takes ciphertexts on BOTH sides, so nothing forces either operand into the clear. The ADD then consumes the previous leaf's result, which is what makes the trace a chain instead of two unrelated facts, and it produces total, the only value the trace releases. Two leaves is already a power of two, so this trace needs no padding and the bisection settles in a single round.",
+
+  "_whatIsNotHere": "Three things this expression deliberately no longer shows, all of them real parts of the instruction set. DIV, and with it the PUBLIC SCALAR rule - four of the fifteen operations take a cleartext right operand - and integer TRUNCATION, which is where an integer trace stops being a neutral translation of the formula. And SUB, with the underflow guard that comes with it: a subtraction that would go below zero is rejected by the objective verifier rather than saturated at zero. See ../../Anatel/anatel-rqual-simplificado/ for a trace that contains all three. Here EVERY operand is a ciphertext, without exception.",
+
+  "x": {
+    "value": 100,
+    "_note": "DECLARED VALUE. The addend. Enters the trace as an ENCRYPTED operand, like every other value in this example.",
+    "_source": "ARBITRARY. Chosen so the addition is visible next to the product rather than lost in it."
+  },
+  "y": {
+    "value": 7,
+    "_note": "DECLARED VALUE. Left factor of the multiplication. ENCRYPTED operand.",
+    "_source": "ARBITRARY."
+  },
+  "z": {
+    "value": 6,
+    "_note": "DECLARED VALUE. Right factor of the multiplication. ENCRYPTED operand: MUL accepts a ciphertext on both sides, so nothing forces this one into the clear either.",
+    "_source": "ARBITRARY."
+  }
+}

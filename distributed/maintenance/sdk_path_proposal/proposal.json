@@ -1,0 +1,16 @@
+{
+  "schema": "vcfhe-sdk-path-proposal-v1",
+  "status": "unapplied",
+  "source": {
+    "cloud_tools.py": "32d214175896dd138666e224c8d3c642e81bbd4f237269cd164b897bb5a20e51"
+  },
+  "candidate": {
+    "cloud_tools.py": "f01962a46eaa351503d508ce7b7b53e4bbbee69b77c5b148c1d9e5855ba55d5c",
+    "sdk_invocation.py": "f45d0a63b7032f31fb4b02176c85ac679c2887f5212e0c5702e260891937d402"
+  },
+  "sdkCopied": false,
+  "credentialsChanged": false,
+  "cloudCalls": [],
+  "defaultAliasDirectory": "/tmp/vcfhe-cloud-tools-<uid>",
+  "actualCause": "Pinned SDK rejects non-ASCII and control characters in IAP ProxyCommand arguments. ASCII spaces and apostrophes are escaped."
+}

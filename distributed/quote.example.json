@@ -1,0 +1,13 @@
+{
+  "currency": "USD",
+  "campaign": "vcfhe-wan-test",
+  "layout": "four-hosts",
+  "quoted_at": null,
+  "hourly": {"compute": null, "nat": null, "disks": null, "ipv4": null},
+  "planned_hours": null,
+  "case_allowance_hours": null,
+  "build_registry": null,
+  "retained_resources": null,
+  "transfer_storage_upper_bound": null,
+  "source_urls": []
+}

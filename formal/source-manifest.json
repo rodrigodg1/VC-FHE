@@ -1,0 +1,82 @@
+{
+  "schema": "vcfhe-formal-source-correspondence-v1",
+  "review_date": "2026-11-07",
+  "files": [
+    {
+      "path": "fhe-pod/contracts/src/VerifiableFHEDisputeGame.sol",
+      "sha256": "1a65f9b044b8eb7f754f9e67aa7e5bddca8e1e6dc512895272b9cc06e66f8f6c"
+    },
+    {
+      "path": "fhe-pod/contracts/src/CanonicalBountyFHEDisputeGame.sol",
+      "sha256": "da6da79f89281b79f609ccad30f1ee0a71acd487ea9bfb8164e46fce4f01562b"
+    },
+    {
+      "path": "fhe-pod/contracts/src/CanonicalLeafVerifier.sol",
+      "sha256": "70d3366abcf3ef01ad3b04e2a5cf260176650dd57701f21669da32ccb947f07e"
+    },
+    {
+      "path": "fhe-pod/scripts/canonical-protocol.mjs",
+      "sha256": "4030e0e362b1e967d3b1419c5ecaf100762c9ca5c7702a786002737dfb423021"
+    },
+    {
+      "path": "fhe-pod/scripts/experimental-public-replay.mjs",
+      "sha256": "4650c114c733146aa47231ebbebdf512fc47296e4c3ef5308a5dd5e27ef89e44"
+    },
+    {
+      "path": "fhe-pod/scripts/compliance-circuit.mjs",
+      "sha256": "68ea6ac06083597ddea3a7acbad03a913a3dc22e0e71f9dc7e3cb54554e6ed19"
+    },
+    {
+      "path": "threshold-kms/contracts/OnChainReleasePolicy.sol",
+      "sha256": "2d974b786fe8e887007d43d6891fd4a6483f984b74758fa7506451792f752315"
+    },
+    {
+      "path": "threshold-kms/src/onchain_release.rs",
+      "sha256": "bee3cafb128b1079833b9ea12db7852d4a32cbe37100a0a75ca957fac36797d8"
+    },
+    {
+      "path": "threshold-kms/src/recipient_validation.rs",
+      "sha256": "8b5cf6bb7b28e97edc63bcd032dbb029315ef1673b88451d922a51858f45cce1"
+    },
+    {
+      "path": "threshold-kms/src/linear_release.rs",
+      "sha256": "892e9583488326267068b750f6f14277a98b894d08e789493ea8c3891d557884"
+    },
+    {
+      "path": "threshold-kms/campaign/owner-chain-quorum.mjs",
+      "sha256": "b47e2b8c00d80a64a102ce09cfe2a82069621b5bd0908d6d96923966f6c78418"
+    },
+    {
+      "path": "threshold-kms/campaign/workflow-auth.mjs",
+      "sha256": "7aaeece0a4ff4de82e7a35a6a998efc548ae6fdf15ea34c9211f80d97206794e"
+    },
+    {
+      "path": "threshold-kms/scripts/kms-request-adapter.mjs",
+      "sha256": "dbc7a5f119beccc699dc7abfbfa12374226c0e6e1a4a9eeea9a165d6ce4b59ce"
+    },
+    {
+      "path": "BN254-Signatures/contract/MKLHS-Verification.sol",
+      "sha256": "592bb83929e482385efb7079173535d45121ab001b7c67e9e5e633ae7d15af15"
+    },
+    {
+      "path": "BN254-Signatures/contract/MKLHS-Verification-v3.sol",
+      "sha256": "1bf6ede229dfeb895030abd6d56427b401a232a33bce168045cb4323fd08b209"
+    },
+    {
+      "path": "threshold-kms/contracts/GroupedLinearVerification.sol",
+      "sha256": "1f76166b8bab5e59cb2e0a819f6bdcb4388117e7577badb1e6b3678380cdcabd"
+    },
+    {
+      "path": "threshold-kms/src/compatible_fhe.rs",
+      "sha256": "5d86cd89aa8fa37f225ac1b44c231f81a05b174220057639a5b1d2ad6eefb193"
+    },
+    {
+      "path": "threshold-kms/scripts/kms-profile-build.py",
+      "sha256": "e7d64992d248dbaf75c02de3a769144c8b36e5ad6dc27f18e7bd78b31fc79d1d"
+    },
+    {
+      "path": "fhe-pod/crates/tfhe-pod-demo/src/bin/circuit-executor.rs",
+      "sha256": "b18e55a218d4b0be0f7a07d84b7e7710b447acaa9300d4fe30db81689911abea"
+    }
+  ]
+}

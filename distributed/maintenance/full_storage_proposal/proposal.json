@@ -1,0 +1,24 @@
+{
+  "schema": "vcfhe-full-storage-proposal-v1",
+  "status": "unapplied",
+  "source": {
+    "cli.py": "6afc463fa0dbc02c7c637d2d749ac681b581682b21410f940ab2511f4af29212",
+    "launch.py": "d4e1a0969be7bafca1c94b60e5bd50be8a1c0fec3d0870ca90c0774fe83bfaa1"
+  },
+  "candidate": {
+    "cli.py": "a78cc874c2252f95b4d35ce39203ffcdaf926b3efb065b70d7d0c336747e78c9",
+    "launch.py": "79fd5103262bff11363a3a5f19e2c52b1b4a892d6e0a4e0bcf6fd42c025ef5fc",
+    "storage_preflight.py": "8a533e19bfd4d2f6b964ad1372ae50b724308debad0bf19a5165d11bacfbe43a"
+  },
+  "minimumGiB": 50,
+  "fullOnly": true,
+  "cloudBuildAloneUnchanged": true,
+  "changesProtocol": false,
+  "cloudActions": [],
+  "futurePrivateConfigSuggestion": {
+    "state_disk_gib": 100,
+    "mustRequoteBeforeLaunch": true,
+    "applied": false
+  },
+  "planningBasis": "Offline A7 payload projection requires about29.7GiB for temporaryTAR plus extracted nonlinear and linear numeric data, before otherfiles andfilesystem overhead.50GiB is operating headroom, not a proved complete-storage bound."
+}

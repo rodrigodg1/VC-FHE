@@ -1,0 +1,54 @@
+{
+  "_disclaimer": "DEMONSTRATION ONLY. Every weight, threshold, band edge and cut-off in this file is a DEPLOYMENT PARAMETER chosen by this repository in order to exercise the dispute pipeline on the smallest trace that still carries the whole structure of the expression. NONE of them is prescribed by ANATEL. What was verified against the regulation is only the STRUCTURE of the expression: Resolucao 717/2019 Art. 7 defines IQS (item VI), IQP (item VII) and IR (item V), and Art. 11 assigns quality seals A to E. The regulation does NOT publish the F(.) mapping from an indicator to its band, nor the numeric cut-offs; those live in Anexo I / Resolucao Interna 444/2025, which was NOT consulted. This repository therefore does NOT reproduce ANATEL's official numbers and must never be described as doing so.",
+  "_relationToFullDemo": "This is the TEACHING variant of Anatel/anatel-rqual/. Same expression, same 15-operation micro-ISA, same dispute pipeline, same contracts. Two deliberate differences, both stated so nobody expects the two runs to agree: (1) IQS and IQP enter as SINGLE pre-aggregated encrypted indicators instead of being computed from a 16-session and a 20-subject panel, which removes 34 accumulation leaves and the four MUL/DIV leaves those panels needed; (2) F(.) uses THREE band edges instead of four, which removes two more leaves per indicator. The result is a 28-leaf trace padded to 32 instead of 89 padded to 128, and 5 bisection rounds instead of 7. The IR stage is kept in full, MUL, DIV, MIN and SUB, because it is the only place the public-scalar division rule and the underflow guard are visible.",
+  "_expression": "IR = 1000 * A_P / B_P; IRscore = 1000 - min(IR, 1000); S = F(IQS) + F(IQP) + F(IRscore); seal = band(S)",
+  "_structureSource": "ANATEL Resolucao 717/2019, Art. 7 (IQS, IQP, IR definitions) and Art. 11 (quality seals A-E). Structure only; see _disclaimer.",
+  "_schema": "every parameter is an object with a numeric or array 'value' plus a '_note' explaining what it is and where it came from",
+  "iqsPermille": {
+    "value": 750,
+    "_source": "ILLUSTRATIVE PRE-AGGREGATED INDICATOR, not a measured quantity and not an ANATEL value. In the full demonstration this number is COMPUTED from a 16-session drive-test panel; here it is supplied directly as the single encrypted input of the IQS stage, so that the trace shows the composition of the indicators rather than the aggregation of a panel. 750 permille is the value the full demonstration's panel happens to produce, chosen so the two examples can be read side by side.",
+    "_note": "DEPLOYMENT PARAMETER / demo input. IQS expressed in permille, the ENCRYPTED authenticated input of the IQS stage."
+  },
+  "iqpPermille": {
+    "value": 320,
+    "_source": "ILLUSTRATIVE PRE-AGGREGATED INDICATOR, not a measured quantity and not an ANATEL value. In the full demonstration this number is COMPUTED from a 20-subject ACR panel; here it is supplied directly. 320 permille is the value that panel produces.",
+    "_note": "DEPLOYMENT PARAMETER / demo input. IQP = ISG expressed in permille, the ENCRYPTED authenticated input of the IQP stage."
+  },
+  "complaintsAp": {
+    "value": 384,
+    "_source": "ILLUSTRATIVE PERIOD CONSTANT, not a measured quantity. A_P in the regulation is the number of user complaints recorded against the provider in the assessment period. No complaint register was consulted. Same value as the full demonstration. In the trace this is the ENCRYPTED, authenticated input of the IR stage.",
+    "_note": "DEPLOYMENT PARAMETER / demo input. Numerator of IR = 1000 * A_P / B_P."
+  },
+  "accessBaseBp": {
+    "value": 1600,
+    "_source": "ILLUSTRATIVE PERIOD CONSTANT, not a measured quantity. B_P in the regulation is the provider's access base in the assessment period. No access-base filing was consulted. Same value as the full demonstration.",
+    "_note": "DEPLOYMENT PARAMETER / public scalar. Denominator of IR = 1000 * A_P / B_P. It enters the trace as a PUBLIC scalar divisor (DIV rhs), never as encrypted user data."
+  },
+  "bandEdgesPermille": {
+    "value": [
+      300,
+      600,
+      800
+    ],
+    "_note": "DEPLOYMENT PARAMETERS. THREE ascending permille edges that define F(.). F(x) = |{edge in bandEdgesPermille : x > edge}|, so F takes values 0..3 and is monotone non-decreasing in x. The full demonstration uses four edges; three are used here purely to shorten the trace, and the difference is the reason the two examples produce different band values for the same indicator. ANATEL does not publish this mapping."
+  },
+  "sealCutoffs": {
+    "value": [
+      1,
+      3,
+      5,
+      7
+    ],
+    "_note": "DEPLOYMENT PARAMETERS. Four ascending cut-offs on S = F(IQS) + F(IQP) + F(IR), which with three band edges ranges over 0..9. sealIndex = |{cutoff in sealCutoffs : S > cutoff}|, so sealIndex ranges over 0..4. FOUR cut-offs are kept, unlike the band edges, because Art. 11 of Res. 717/2019 establishes FIVE quality seals and five bands need four separators. The numeric values are configuration, not ANATEL cut-offs, and they are placed inside 0..9 so that every one of the five seals is reachable."
+  },
+  "sealLabels": {
+    "value": [
+      "E",
+      "D",
+      "C",
+      "B",
+      "A"
+    ],
+    "_note": "Presentation only: sealIndex 0 is the worst band and sealIndex 4 the best, matching the A-to-E ordering of Art. 11. The labels are attached off-chain for the narration; the trace releases only the integer sealIndex."
+  }
+}

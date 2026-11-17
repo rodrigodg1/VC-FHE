@@ -1,0 +1,14 @@
+{
+  "outputs": {
+    "workflows/c3.jsonl.gz": {
+      "records": 10,
+      "sha256": "e2971f8ff780a6eaf41c07ed1fef2bf84fc6c26b358e12b7bb029a5546c6d05a",
+      "bytes": 38273
+    },
+    "workflows/c4.jsonl.gz": {
+      "records": 17,
+      "sha256": "85e6d543dd1affebf5a132f2c0f4593b0c8dbc5be0b1decbec1137ae241a6dca",
+      "bytes": 121012
+    }
+  }
+}

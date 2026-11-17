@@ -1,0 +1,17 @@
+{
+  "name": "vcfhe-toolkit",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Additive high-level access layer over the verifiable FHE implementation: a restricted expression front end that compiles supported computations into the low-level instructions the existing contracts already verify.",
+  "bin": { "vcfhe": "./bin/vcfhe.mjs" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "example:run": "node bin/vcfhe.mjs run \"3*x1 + 2*x2 - x3\" --inputs x1=4,x2=5,x3=2 --tag qoe-demo",
+    "example:linear": "node bin/vcfhe.mjs compile \"x1 + x2 + x3\"",
+    "example:weighted": "node bin/vcfhe.mjs compile \"3*x1 + 2*x2 - x3\" --inputs x1=4,x2=5,x3=2",
+    "example:predicate": "node bin/vcfhe.mjs compile \"gt(x1*x1 + x2*x2, 25)\" --inputs x1=3,x2=5",
+    "example:deploy": "node bin/vcfhe.mjs compile \"3*x1 + 2*x2 - x3\" --inputs x1=4,x2=5,x3=2 --deploy",
+    "ops": "node bin/vcfhe.mjs ops"
+  }
+}

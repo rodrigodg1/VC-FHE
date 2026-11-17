@@ -1,0 +1,23 @@
+.git
+node_modules
+**/node_modules
+**/target
+**/.cache
+**/.deps
+**/.policy-state
+**/runs
+**/composites
+**/generated
+**/__pycache__
+**/*.local.*
+**/*.pem
+**/*.key
+**/*.tfstate*
+**/.env*
+datasets/raw
+datasets/outputs
+data
+results
+
+# Historical local backup is not a build input.
+previous-version

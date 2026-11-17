@@ -1,0 +1,48 @@
+{
+  "schema": "measured-setup-review-v1",
+  "half": "both",
+  "hostEnvironment": {
+    "schema": "launcher-host-environment-v1",
+    "scope": "launcher-host-not-docker-daemon",
+    "operatingSystem": "Darwin",
+    "operatingSystemRelease": "27.0.0",
+    "architecture": "arm64",
+    "cpuModel": "Apple M4 Pro",
+    "logicalCpuCount": 12,
+    "osVisibleMemoryBytes": 25769803776,
+    "unavailableFields": []
+  },
+  "hostMetadataStatus": "recorded",
+  "dockerResources": {
+    "NCPU": 12,
+    "MemTotal": 20939845632,
+    "Architecture": "aarch64",
+    "OperatingSystem": "Docker Desktop"
+  },
+  "measuredPairs": 480,
+  "warmups": 18,
+  "fullCases": 45,
+  "windowSeconds": 120,
+  "configuredDisclosureBatchSize": 64,
+  "disclosureBatchSize": 48,
+  "disclosureBatchEvidence": {
+    "configuredBatchSize": 64,
+    "measuredMaximumBatchSize": 48,
+    "batchCount": 140,
+    "publishedLeaves": 6080,
+    "taskCount": 30,
+    "batchSizeCounts": {
+      "16": 10,
+      "32": 20,
+      "48": 110
+    },
+    "eventTopic": "0x4f06e2771c770611ac4e425d815922b2bf8b3693fdbd5e5262fcb7190d360ff6",
+    "method": "authenticated leaf events per sealed successful relay receipt"
+  },
+  "kmsRayonThreads": 1,
+  "kmsTokioThreads": 1,
+  "nonlinearProtocol": "bounty-v2",
+  "nonlinearSchedulingVersion": "audit-first-baseline-in-finality-wait-v1",
+  "keysetScope": "one campaign keyset for the selected half or halves",
+  "otherHalfSetup": null
+}

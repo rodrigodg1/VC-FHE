@@ -1,0 +1,289 @@
+@VCFHE.AuditPrivacy.public_simulator_exists : ∀ {S P R : Type},
+  S →
+    ∀ (operations : List (S → P → R → P)),
+      (∀ (op : S → P → R → P), op ∈ operations → VCFHE.AuditPrivacy.PublicOnly op) →
+        ∃ simulator,
+          ∀ (secret : S) (public : P) (randomness : R),
+            simulator public randomness = VCFHE.AuditPrivacy.run operations secret public randomness
+@VCFHE.AuditPrivacy.public_transcript_noninterference : ∀ {S P R : Type} (operations : List (S → P → R → P)),
+  (∀ (op : S → P → R → P), op ∈ operations → VCFHE.AuditPrivacy.PublicOnly op) →
+    ∀ (s1 s2 : S) (public : P) (randomness : R),
+      VCFHE.AuditPrivacy.run operations s1 public randomness = VCFHE.AuditPrivacy.run operations s2 public randomness
+@VCFHE.Bisection.detection_and_localization : ∀ {Cipher : Type} (step : Nat → VCFHE.Canonical.Trace Cipher → Cipher),
+  VCFHE.Canonical.PrefixDependent step →
+    ∀ (height : Nat) (reference operator : VCFHE.Canonical.Trace Cipher),
+      VCFHE.Canonical.Valid step (2 ^ height) reference →
+        ∀ (differs : Nat → Nat → Bool),
+          (∀ (lo hi : Nat), differs lo hi = true ↔ ∃ j, lo ≤ j ∧ j < hi ∧ operator j ≠ reference j) →
+            (∃ i, i < 2 ^ height ∧ operator i ≠ reference i) →
+              let k := VCFHE.Bisection.locate differs 0 height;
+              k < 2 ^ height ∧ VCFHE.Canonical.FirstDifference operator reference k ∧ operator k ≠ step k operator
+VCFHE.Bisection.isolates_first : ∀ (different : Nat → Prop) (differs : Nat → Nat → Bool),
+  (∀ (lo hi : Nat), differs lo hi = true ↔ ∃ j, lo ≤ j ∧ j < hi ∧ different j) →
+    ∀ (k : Nat),
+      (different k ∧ ∀ (j : Nat), j < k → ¬different j) →
+        ∀ (height lo : Nat), lo ≤ k → k < lo + 2 ^ height → VCFHE.Bisection.locate differs lo height = k
+@VCFHE.Canonical.detection : ∀ {Cipher : Type} (step : Nat → VCFHE.Canonical.Trace Cipher → Cipher),
+  VCFHE.Canonical.PrefixDependent step →
+    ∀ (n : Nat) (reference operator : VCFHE.Canonical.Trace Cipher),
+      VCFHE.Canonical.Valid step n reference →
+        (∀ (i : Nat), i < n → operator i = reference i) ∨
+          ∃ k, k < n ∧ VCFHE.Canonical.FirstDifference operator reference k ∧ operator k ≠ step k operator
+@VCFHE.Canonical.first_difference_exists : ∀ {Cipher : Type} (a b : VCFHE.Canonical.Trace Cipher) (n : Nat),
+  (∃ i, i < n ∧ a i ≠ b i) → ∃ k, k < n ∧ VCFHE.Canonical.FirstDifference a b k
+@VCFHE.Canonical.first_difference_invalid : ∀ {Cipher : Type} (step : Nat → VCFHE.Canonical.Trace Cipher → Cipher),
+  VCFHE.Canonical.PrefixDependent step →
+    ∀ (reference operator : VCFHE.Canonical.Trace Cipher) (n k : Nat),
+      VCFHE.Canonical.Valid step n reference →
+        k < n → VCFHE.Canonical.FirstDifference operator reference k → operator k ≠ step k operator
+@VCFHE.Canonical.terminal_agreement : ∀ {Cipher : Type} (step : Nat → VCFHE.Canonical.Trace Cipher → Cipher),
+  VCFHE.Canonical.PrefixDependent step →
+    ∀ (last : Nat) (a b : VCFHE.Canonical.Trace Cipher),
+      VCFHE.Canonical.Valid step (last + 1) a → VCFHE.Canonical.Valid step (last + 1) b → a last = b last
+@VCFHE.Canonical.valid_traces_agree : ∀ {Cipher : Type} (step : Nat → VCFHE.Canonical.Trace Cipher → Cipher),
+  VCFHE.Canonical.PrefixDependent step →
+    ∀ (n : Nat) (a b : VCFHE.Canonical.Trace Cipher),
+      VCFHE.Canonical.Valid step n a → VCFHE.Canonical.Valid step n b → ∀ (i : Nat), i < n → a i = b i
+@VCFHE.Composition.failure_containment : ∀ {Outcome : Type}
+  (error coverage binding certificate fhe kms : Outcome → Prop),
+  (∀ (x : Outcome), coverage x → ¬binding x → ¬certificate x → ¬fhe x → ¬kms x → ¬error x) →
+    ∀ (x : Outcome), error x → ¬coverage x ∨ binding x ∨ certificate x ∨ fhe x ∨ kms x
+@VCFHE.Composition.five_event_error_bound : ∀ {Outcome : Type} (outcomes : List Outcome) (weight : Outcome → Nat)
+  (error coverage binding certificate fhe kms : Outcome → Prop),
+  (∀ (x : Outcome), coverage x → ¬binding x → ¬certificate x → ¬fhe x → ¬kms x → ¬error x) →
+    VCFHE.Composition.mass outcomes weight error ≤
+      (VCFHE.Composition.mass outcomes weight fun x => ¬coverage x) + VCFHE.Composition.mass outcomes weight binding +
+            VCFHE.Composition.mass outcomes weight certificate +
+          VCFHE.Composition.mass outcomes weight fhe +
+        VCFHE.Composition.mass outcomes weight kms
+VCFHE.Composition.released_plaintext_correct : ∀ (eval : Nat → VCFHE.Canonical.Trace Nat → Nat),
+  VCFHE.Canonical.PrefixDependent eval →
+    ∀ (last : Nat) (reference operator : VCFHE.Canonical.Trace Nat),
+      VCFHE.Canonical.Valid eval (last + 1) reference →
+        ∀ (rules : VCFHE.Dispute.Rules),
+          (∀ (k : Nat), k < last + 1 → (rules.operatorValid k = true ↔ operator k = eval k operator)) →
+            VCFHE.Dispute.Covered rules (last + 1) operator reference VCFHE.Dispute.Phase.accepted →
+              ∀ (policy : VCFHE.Release.Config) (state : VCFHE.Release.State) (request : VCFHE.Release.Request),
+                (∀ (record : Nat), policy.initialSpent record ≤ policy.limit record) →
+                  VCFHE.Release.Reachable policy state →
+                    ∀ (q f : Nat) (faulty : Fin q → Bool),
+                      VCFHE.Quorum.faultyCount q faulty ≤ f →
+                        f < q →
+                          (∀ (i : Fin q), faulty i = false → request ∈ state.reserved) →
+                            (request ∈ state.reserved → VCFHE.Release.OutputBound policy request) →
+                              policy.acceptedOutput (policy.terms request.consent).task = some (operator last) →
+                                ∀ (decrypt : Nat → Nat) (intended plaintext : Nat),
+                                  decrypt (reference last) = intended →
+                                    plaintext = decrypt request.output →
+                                      VCFHE.Release.Authorized policy state request ∧ plaintext = intended
+@VCFHE.Composition.weighted_union_bound : ∀ {Outcome : Type} (outcomes : List Outcome) (weight : Outcome → Nat)
+  (error a b c d e : Outcome → Prop),
+  (∀ (x : Outcome), error x → a x ∨ b x ∨ c x ∨ d x ∨ e x) →
+    VCFHE.Composition.mass outcomes weight error ≤
+      VCFHE.Composition.mass outcomes weight a + VCFHE.Composition.mass outcomes weight b +
+            VCFHE.Composition.mass outcomes weight c +
+          VCFHE.Composition.mass outcomes weight d +
+        VCFHE.Composition.mass outcomes weight e
+VCFHE.Dispute.admitted_bounty_settlement : ∀ (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim),
+  r.operatorValid c.leaf = false →
+    r.candidateValid c = true →
+      r.evidenceValid c →
+        VCFHE.Dispute.Run r (VCFHE.Dispute.Phase.challenged c) (VCFHE.Dispute.Phase.rejected (some c.auditor))
+VCFHE.Dispute.admitted_outage_preserves_pending : ∀ (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim)
+  (b : VCFHE.Dispute.Phase),
+  VCFHE.Dispute.Step r (VCFHE.Dispute.Phase.admitted c) b →
+    (b ≠ VCFHE.Dispute.Phase.auditing ∧ ∀ (x : Option Nat), b ≠ VCFHE.Dispute.Phase.rejected x) →
+      b = VCFHE.Dispute.Phase.admitted c
+VCFHE.Dispute.bounty_requires_both_results : ∀ (r : VCFHE.Dispute.Rules) (a : VCFHE.Dispute.Phase) (beneficiary : Nat),
+  VCFHE.Dispute.Step r a (VCFHE.Dispute.Phase.rejected (some beneficiary)) →
+    a ≠ VCFHE.Dispute.Phase.rejected (some beneficiary) →
+      ∃ c,
+        a = VCFHE.Dispute.Phase.admitted c ∧
+          c.auditor = beneficiary ∧ r.operatorValid c.leaf = false ∧ r.candidateValid c = true
+VCFHE.Dispute.challenge_blocks_acceptance : ∀ (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim),
+  r.operatorValid c.leaf = false →
+    r.evidenceValid c →
+      r.timely c → ¬VCFHE.Dispute.Run r (VCFHE.Dispute.Phase.challenged c) VCFHE.Dispute.Phase.accepted
+@VCFHE.Dispute.conditional_trace_soundness : ∀ {Cipher : Type} (eval : Nat → VCFHE.Canonical.Trace Cipher → Cipher),
+  VCFHE.Canonical.PrefixDependent eval →
+    ∀ (n : Nat) (reference operator : VCFHE.Canonical.Trace Cipher),
+      VCFHE.Canonical.Valid eval n reference →
+        ∀ (r : VCFHE.Dispute.Rules),
+          (∀ (k : Nat), k < n → (r.operatorValid k = true ↔ operator k = eval k operator)) →
+            VCFHE.Dispute.Covered r n operator reference VCFHE.Dispute.Phase.accepted →
+              ∀ (i : Nat), i < n → operator i = reference i
+VCFHE.Dispute.protected_run : ∀ (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim),
+  r.operatorValid c.leaf = false →
+    r.evidenceValid c →
+      r.timely c →
+        ∀ (a b : VCFHE.Dispute.Phase),
+          VCFHE.Dispute.Protected c a → VCFHE.Dispute.Run r a b → VCFHE.Dispute.Protected c b
+VCFHE.Dispute.protected_step : ∀ (r : VCFHE.Dispute.Rules) (c : VCFHE.Dispute.Claim),
+  r.operatorValid c.leaf = false →
+    r.evidenceValid c →
+      r.timely c →
+        ∀ (a b : VCFHE.Dispute.Phase),
+          VCFHE.Dispute.Protected c a → VCFHE.Dispute.Step r a b → VCFHE.Dispute.Protected c b
+VCFHE.Dispute.rejected_stays_rejected : ∀ (r : VCFHE.Dispute.Rules) (beneficiary : Option Nat)
+  (b : VCFHE.Dispute.Phase),
+  VCFHE.Dispute.Run r (VCFHE.Dispute.Phase.rejected beneficiary) b → b = VCFHE.Dispute.Phase.rejected beneficiary
+VCFHE.Economics.challenge_profit_iff : ∀ (pReward pBond reward cost bond denominator : Int),
+  0 < pReward * reward - denominator * cost - pBond * bond ↔ pReward * reward > denominator * cost + pBond * bond
+VCFHE.Economics.coalition_loss : ∀ (penalty reward feeLimit fee : Int),
+  penalty > reward + feeLimit → fee ≤ feeLimit → penalty - reward - fee > 0
+VCFHE.Economics.deterrence_sufficient : ∀ (d p reward benefit loss honestCost cheatCost actualCheat : Int),
+  actualCheat ≤ (d - p) * (reward + benefit) - p * loss - d * cheatCost →
+    p * (loss + reward) > (d - p) * benefit + d * (honestCost - cheatCost) → d * reward - d * honestCost > actualCheat
+VCFHE.Economics.no_fault_no_profit : ∀ (cost : Int), cost > 0 → 0 - cost < 0
+VCFHE.Economics.operator_gap : ∀ (d p reward benefit loss honestCost cheatCost : Int),
+  d * reward - d * honestCost - ((d - p) * (reward + benefit) - p * loss - d * cheatCost) =
+    p * (loss + reward) - (d - p) * benefit - d * (honestCost - cheatCost)
+VCFHE.Economics.participation_profit_iff : ∀ (pWin reward monitor other losses denominator : Int),
+  0 < pWin * reward - denominator * (monitor + other + losses) ↔
+    pWin * reward > denominator * (monitor + other + losses)
+VCFHE.Economics.winning_margin : ∀ (reward feeLimit costLimit fee cost : Int),
+  reward > feeLimit + costLimit → fee ≤ feeLimit → cost ≤ costLimit → reward - fee - cost > 0
+@VCFHE.EndToEnd.nonlinear_plaintext_error_bound : ∀ {Outcome : Type} (outcomes : List Outcome) (weight : Outcome → Nat)
+  (execution : Outcome → VCFHE.EndToEnd.Execution) (coverage binding certificate fhe kms : Outcome → Prop),
+  (∀ (x : Outcome), ¬binding x → VCFHE.EndToEnd.BindingOK (execution x)) →
+    (∀ (x : Outcome), ¬binding x → ¬certificate x → VCFHE.EndToEnd.CertificateOK (execution x)) →
+      (∀ (x : Outcome),
+          coverage x →
+            ¬binding x →
+              ¬certificate x →
+                VCFHE.Dispute.Covered (execution x).rules ((execution x).last + 1) (execution x).operator
+                  (execution x).reference VCFHE.Dispute.Phase.accepted) →
+        (∀ (x : Outcome),
+            ¬fhe x → (execution x).decrypt ((execution x).reference (execution x).last) = (execution x).intended) →
+          (∀ (x : Outcome), ¬binding x → ¬kms x → VCFHE.EndToEnd.KMSOK (execution x)) →
+            (VCFHE.Composition.mass outcomes weight fun x => (execution x).plaintext ≠ (execution x).intended) ≤
+              (VCFHE.Composition.mass outcomes weight fun x => ¬coverage x) +
+                      VCFHE.Composition.mass outcomes weight binding +
+                    VCFHE.Composition.mass outcomes weight certificate +
+                  VCFHE.Composition.mass outcomes weight fhe +
+                VCFHE.Composition.mass outcomes weight kms
+VCFHE.GroupedConversion.carry_conservation : ∀ (digits : List Nat) (carry : Nat),
+  VCFHE.GroupedConversion.normalizeValue digits carry = VCFHE.GroupedConversion.value digits + carry
+VCFHE.GroupedConversion.digit_range : ∀ (total : Nat), total % 4 ≤ 3
+VCFHE.GroupedConversion.group_capacity : ∀ (members degree carry : Nat),
+  members ≤ 4 → degree ≤ 3 * members → carry ≤ 3 → degree + carry ≤ 15 ∧ (degree + carry) / 4 ≤ 3
+VCFHE.GroupedConversion.group_noise_capacity : ∀ (members freshCarry : Nat),
+  members ≤ 4 → freshCarry ≤ 1 → members + freshCarry ≤ 5
+VCFHE.GroupedConversion.interval_subtraction : ∀ (positive negative : Int),
+  0 ≤ positive - negative → positive - negative ≤ 511 → negative ≤ positive ∧ positive - negative < 65536
+VCFHE.GroupedConversion.no_top_overflow : ∀ (total : Nat), total < 65536 → total % 65536 = total
+VCFHE.GroupedConversion.sub_layout_fits : ∀ (n : Nat), 1 ≤ n → n ≤ 33 → 1 + (n - 1 + 3) / 4 ≤ 9
+VCFHE.GroupedConversion.subtotal_fits : ∀ (n total : Nat), n ≤ 33 → total ≤ n * 511 → total < 65536
+VCFHE.GroupedConversion.sum_layout_fits : ∀ (n : Nat), n ≤ 33 → (n + 3) / 4 ≤ 9
+VCFHE.Linear.balanced_lift_canonical : ∀ (r s : Int),
+  0 < r → -r < 2 * s → 2 * s < r → 0 ≤ VCFHE.Linear.lift r s ∧ VCFHE.Linear.lift r s < r
+VCFHE.Linear.balanced_lift_exact : ∀ (r s : Int),
+  0 < r → -r < 2 * s → 2 * s < r → VCFHE.Linear.center r (VCFHE.Linear.lift r s) = s
+@VCFHE.Linear.collision_exposes_relation : ∀ {V G : Type} (P : V → G) (subV : V → V → V) (subG : G → G → G) (zeroV : V)
+  (zeroG : G),
+  (∀ (a b : V), P (subV a b) = subG (P a) (P b)) →
+    (∀ (a b : V), subV a b = zeroV → a = b) →
+      (∀ (g : G), subG g g = zeroG) →
+        ∀ (actual expected : V),
+          P actual = P expected → actual ≠ expected → subV actual expected ≠ zeroV ∧ P (subV actual expected) = zeroG
+@VCFHE.Linear.homomorphic_accumulation : ∀ {V G : Type} (zeroV : V) (zeroG : G) (addV : V → V → V) (addG : G → G → G)
+  (P : V → G),
+  P zeroV = zeroG →
+    (∀ (a b : V), P (addV a b) = addG (P a) (P b)) →
+      ∀ (weightedInputs : List V),
+        P (VCFHE.Linear.aggregate zeroV addV weightedInputs) =
+          VCFHE.Linear.aggregate zeroG addG (List.map P weightedInputs)
+VCFHE.Linear.signed_reduction : ∀ (r q s : Int),
+  0 < r → -r < 2 * s → 2 * s < r → VCFHE.Linear.center r (VCFHE.Linear.lift r s) % q = s % q
+VCFHE.Linear.strict_decoding_cell : ∀ (delta m noise : Int),
+  0 < delta →
+    -delta < 2 * noise →
+      2 * noise < delta →
+        2 * (delta * m) - delta < 2 * (delta * m + noise) ∧ 2 * (delta * m + noise) < 2 * (delta * m) + delta
+VCFHE.Liveness.eventual_finality : ∀ (height : Nat) (execution : Nat → VCFHE.Liveness.State),
+  (∀ (i : Nat),
+      execution i ≠ VCFHE.Liveness.State.final → VCFHE.Liveness.Progress height (execution i) (execution (i + 1))) →
+    ∃ i, execution i = VCFHE.Liveness.State.final
+VCFHE.Liveness.no_infinite_descent : ∀ (f : Nat → Nat), ¬∀ (i : Nat), f (i + 1) < f i
+VCFHE.Liveness.progress_decreases : ∀ (height : Nat) (a b : VCFHE.Liveness.State),
+  VCFHE.Liveness.Progress height a b → VCFHE.Liveness.rank height b < VCFHE.Liveness.rank height a
+VCFHE.Quorum.all_faulty_count : ∀ (n : Nat) (faulty : Fin n → Bool),
+  (∀ (i : Fin n), faulty i = true) → VCFHE.Quorum.faultyCount n faulty = n
+@VCFHE.Quorum.certified_value_eq : ∀ {Value : Type} (q f : Nat) (faulty : Fin q → Bool),
+  VCFHE.Quorum.faultyCount q faulty ≤ f →
+    f < q →
+      ∀ (certified expected : Value), (∀ (i : Fin q), faulty i = false → certified = expected) → certified = expected
+VCFHE.Quorum.count_le_size : ∀ (n : Nat) (flags : Fin n → Bool), VCFHE.Quorum.faultyCount n flags ≤ n
+VCFHE.Quorum.full_count_all_true : ∀ (n : Nat) (flags : Fin n → Bool),
+  VCFHE.Quorum.faultyCount n flags = n → ∀ (i : Fin n), flags i = true
+VCFHE.Quorum.honest_signer_exists : ∀ (q f : Nat) (faulty : Fin q → Bool),
+  VCFHE.Quorum.faultyCount q faulty ≤ f → f < q → ∃ i, faulty i = false
+VCFHE.Quorum.threshold_feasible : ∀ (n f q : Nat), f < q → q ≤ n - f → 2 * f < n
+VCFHE.Release.authorization_after_consent : ∀ (c : VCFHE.Release.Config) (s : VCFHE.Release.State)
+  (r : VCFHE.Release.Request) (t o : Nat),
+  VCFHE.Release.Authorized c s r → VCFHE.Release.Authorized c (VCFHE.Release.approveConsent s t o) r
+VCFHE.Release.authorization_after_exact : ∀ (c : VCFHE.Release.Config) (s : VCFHE.Release.State)
+  (r req : VCFHE.Release.Request) (o : Nat),
+  VCFHE.Release.Authorized c s r → VCFHE.Release.Authorized c (VCFHE.Release.approveExact s req o) r
+VCFHE.Release.cannot_reserve_twice : ∀ (c : VCFHE.Release.Config) (s : VCFHE.Release.State) (r : VCFHE.Release.Request),
+  r ∈ s.reserved → ¬VCFHE.Release.Guard c s r
+VCFHE.Release.initial_invariant : ∀ (c : VCFHE.Release.Config),
+  (∀ (record : Nat), c.initialSpent record ≤ c.limit record) → VCFHE.Release.Invariant c (VCFHE.Release.initial c)
+VCFHE.Release.reachable_invariant : ∀ (c : VCFHE.Release.Config),
+  (∀ (record : Nat), c.initialSpent record ≤ c.limit record) →
+    ∀ (s : VCFHE.Release.State), VCFHE.Release.Reachable c s → VCFHE.Release.Invariant c s
+VCFHE.Release.step_preserves : ∀ (c : VCFHE.Release.Config) (s t : VCFHE.Release.State),
+  VCFHE.Release.Invariant c s → VCFHE.Release.Step c s t → VCFHE.Release.Invariant c t
+VCFHE.Release.threshold_release_authorized : ∀ (c : VCFHE.Release.Config) (s : VCFHE.Release.State),
+  (∀ (record : Nat), c.initialSpent record ≤ c.limit record) →
+    VCFHE.Release.Reachable c s →
+      ∀ (r : VCFHE.Release.Request) (q f : Nat) (faulty : Fin q → Bool),
+        VCFHE.Quorum.faultyCount q faulty ≤ f →
+          f < q → (∀ (i : Fin q), faulty i = false → r ∈ s.reserved) → VCFHE.Release.Authorized c s r
+VCFHE.Release.threshold_release_bound : ∀ (c : VCFHE.Release.Config) (s : VCFHE.Release.State),
+  (∀ (record : Nat), c.initialSpent record ≤ c.limit record) →
+    VCFHE.Release.Reachable c s →
+      ∀ (r : VCFHE.Release.Request) (q f : Nat) (faulty : Fin q → Bool),
+        VCFHE.Quorum.faultyCount q faulty ≤ f →
+          f < q →
+            (∀ (i : Fin q), faulty i = false → r ∈ s.reserved) →
+              (r ∈ s.reserved → VCFHE.Release.OutputBound c r) →
+                VCFHE.Release.Authorized c s r ∧ VCFHE.Release.OutputBound c r
+VCFHE.Witnesses.approved_state_reachable : ∀ (c : VCFHE.Release.Config),
+  VCFHE.Release.Reachable c (VCFHE.Witnesses.approvedState c)
+VCFHE.Witnesses.authorized_reservation_exists : ∃ s,
+  VCFHE.Release.Reachable VCFHE.Witnesses.exampleConfig s ∧
+    VCFHE.Witnesses.exampleRequest ∈ s.reserved ∧
+      s.spent 7 = 1 ∧ VCFHE.Release.Authorized VCFHE.Witnesses.exampleConfig s VCFHE.Witnesses.exampleRequest
+VCFHE.Witnesses.budget_guard_is_necessary : let c :=
+  let __src := VCFHE.Witnesses.exampleConfig;
+  { terms := __src.terms, owner := __src.owner, limit := __src.limit, initialSpent := fun x => 2,
+    acceptedOutput := __src.acceptedOutput, chainFinality := __src.chainFinality,
+    recipientSigned := __src.recipientSigned, deliveryValid := __src.deliveryValid };
+let s := VCFHE.Witnesses.approvedState c;
+(VCFHE.Release.reserve c s VCFHE.Witnesses.exampleRequest).spent 7 > c.limit 7 ∧
+  ¬VCFHE.Release.Guard c s VCFHE.Witnesses.exampleRequest
+VCFHE.Witnesses.changed_recipient_requires_authorization : let changed :=
+  let __src := VCFHE.Witnesses.exampleRequest;
+  { consent := __src.consent, id := __src.id, key := __src.key, output := __src.output, recipient := 99,
+    recipientKey := __src.recipientKey, wire := __src.wire, query := __src.query, aggregate := __src.aggregate };
+¬VCFHE.Release.Guard VCFHE.Witnesses.exampleConfig (VCFHE.Witnesses.approvedState VCFHE.Witnesses.exampleConfig) changed
+VCFHE.Witnesses.corruption_bound_is_necessary : (VCFHE.Quorum.faultyCount 1 fun x => true) = 1 ∧
+  (∀ (i : Fin 1), (fun x => true) i = false → 1 = 0) ∧ 1 ≠ 0
+VCFHE.Witnesses.covered_invalid_execution_rejects : VCFHE.Dispute.Run VCFHE.Witnesses.exampleRules
+    (VCFHE.Dispute.Phase.challenged VCFHE.Witnesses.exampleClaim) (VCFHE.Dispute.Phase.rejected (some 1)) ∧
+  ¬VCFHE.Dispute.Run VCFHE.Witnesses.exampleRules (VCFHE.Dispute.Phase.challenged VCFHE.Witnesses.exampleClaim)
+      VCFHE.Dispute.Phase.accepted
+VCFHE.Witnesses.end_to_end_premises_inhabited : VCFHE.EndToEnd.BindingOK VCFHE.Witnesses.completeExecution ∧
+  VCFHE.EndToEnd.CertificateOK VCFHE.Witnesses.completeExecution ∧
+    VCFHE.EndToEnd.KMSOK VCFHE.Witnesses.completeExecution ∧
+      VCFHE.Dispute.Covered VCFHE.Witnesses.completeExecution.rules 1 VCFHE.Witnesses.completeExecution.operator
+          VCFHE.Witnesses.completeExecution.reference VCFHE.Dispute.Phase.accepted ∧
+        VCFHE.Witnesses.completeExecution.decrypt
+            (VCFHE.Witnesses.completeExecution.reference VCFHE.Witnesses.completeExecution.last) =
+          VCFHE.Witnesses.completeExecution.intended
+VCFHE.Witnesses.reservation_guard_inhabited : VCFHE.Release.Guard VCFHE.Witnesses.exampleConfig
+  (VCFHE.Witnesses.approvedState VCFHE.Witnesses.exampleConfig) VCFHE.Witnesses.exampleRequest
+VCFHE.Witnesses.uncovered_acceptance_witness : VCFHE.Dispute.Run VCFHE.Witnesses.exampleRules
+    VCFHE.Dispute.Phase.auditing VCFHE.Dispute.Phase.accepted ∧
+  ¬VCFHE.Dispute.Covered VCFHE.Witnesses.exampleRules 1 (fun x => 1) (fun x => 0) VCFHE.Dispute.Phase.accepted

@@ -1,0 +1,25 @@
+/target
+
+# Node / Hardhat generated artifacts
+/node_modules
+/artifacts
+/cache
+
+# Artifacts of the removed single-curator path, kept ignored so an old working
+# copy does not resurface them. Their replacements (mklhs_tfhe_gas_results.csv,
+# mklhs_gas_results.csv, mklhs_adversarial_results.csv, mklhs_maptogroup_fit.txt
+# and onchain_proofs_tfhe_mk.json) are tracked: they are the evaluation's evidence.
+/onchain_output_binding.csv
+/onchain_proofs.json
+
+# Demo (pseudorandom) payload and its gas CSV: wiring regression and soundness
+# only, never evaluation evidence. Regenerated in seconds by `npm run payload:demo-mk`,
+# and on demand by `npm run verify:soundness`.
+/onchain_proofs_demo_mk.json
+/mklhs_demo_gas_results.csv
+/mklhs_demo_gas_results_ganache.csv
+
+# Mirror-crate payload, emitted by `output-binding-lhs -- emit-onchain-mk` to
+# cross-check the Rust, JS and Solidity maps against the deployed contract.
+# Reproducible on demand; the tracked real-TFHE payload is the evaluation evidence.
+/onchain_proofs_mirror_mk.json

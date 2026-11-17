@@ -1,0 +1,181 @@
+{
+  "schema": "public-documentation-review-v1",
+  "checkedDate": "2026-11-07",
+  "scope": "Documentation, source inventory, numerical reproduction and implementation regressions",
+  "suites": [
+    {
+      "name": "campaignPython",
+      "command": "python3 -B -m unittest discover -s threshold-kms/campaign",
+      "passed": 198
+    },
+    {
+      "name": "postprocessPython",
+      "command": "python3 -B -m unittest discover -s threshold-kms/postprocess",
+      "passed": 37
+    },
+    {
+      "name": "localRecoveryPython",
+      "command": "python3 -B -m unittest discover -s threshold-kms/recovery",
+      "passed": 41
+    },
+    {
+      "name": "distributedPython",
+      "command": "./run-distributed.sh test (distributed/tests)",
+      "passed": 397
+    },
+    {
+      "name": "zeroReleaseRecovery",
+      "command": "./run-distributed.sh test (workflow-recovery)",
+      "passed": 22
+    },
+    {
+      "name": "completedPrefixRecovery",
+      "command": "./run-distributed.sh test (completed-prefix-recovery)",
+      "passed": 25
+    },
+    {
+      "name": "distributedNode",
+      "command": "./run-distributed.sh test (Node)",
+      "passed": 42
+    },
+    {
+      "name": "lowering",
+      "command": "npm --prefix fhe-pod run test:lowering",
+      "passed": 27
+    },
+    {
+      "name": "bountyEconomics",
+      "command": "node --test fhe-pod/contracts/test/bounty-economics.test.mjs",
+      "passed": 3
+    },
+    {
+      "name": "bountyContracts",
+      "command": "npm --prefix fhe-pod run test:canonical-bounty",
+      "passed": 29
+    },
+    {
+      "name": "toolkit",
+      "command": "npm --prefix toolkit test",
+      "passed": 75
+    },
+    {
+      "name": "linearContract",
+      "command": "npm --prefix BN254-Signatures run test:mklhs",
+      "passed": 13
+    }
+  ],
+  "totalPassed": 909,
+  "independentSourceCopy": [
+    {
+      "command": [
+        "./run-poc.sh",
+        "--help"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "./run-poc.sh",
+        "--list"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "./run-distributed.sh",
+        "plan"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "results/reproduce.py"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-docs.py"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-public.py"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "numericalCollections": {
+    "distributed": {
+      "observations": 8392,
+      "groupedMetrics": 1504,
+      "pairs": 480,
+      "warmups": 18,
+      "fullCases": 27
+    },
+    "localArchive": {
+      "observations": 11266,
+      "groupedMetrics": 1504,
+      "pairs": 480,
+      "warmups": 18,
+      "fullCases": 45
+    }
+  },
+  "renderedDistributedFigures": 3,
+  "renderFormats": [
+    "PDF",
+    "PNG",
+    "SVG",
+    "CSV",
+    "JSON"
+  ],
+  "formal": {
+    "retainedReportMatched": true,
+    "theorems": 70,
+    "mappedImplementationFiles": 19,
+    "checkerAndProofHashesMatched": true,
+    "checkedScope": "Identity of retained proof/checker/source records"
+  },
+  "dependencies": {
+    "node": "22.20.0",
+    "python": "3.14",
+    "npmInstall": "Locked component packages installed from existing cache with --offline --ignore-scripts",
+    "plotting": "Existing Matplotlib 3.10.8 environment; no new dependency-resolution claim"
+  },
+  "changesOutsideDocumentation": [
+    "scripts/check-docs.py: offline navigation check",
+    "toolkit/test/toolkit.test.mjs: retain exact opcode map, add existing ADD_CHAIN=15 to outdated 14-entry expectation",
+    "source-inventory.json: current public release inventory, adding the previously omitted formal package; original measurement and formal-source manifests preserved"
+  ],
+  "preserved": [
+    "original numerical collection files",
+    "protocol implementation",
+    "formal proof source files and original evidence",
+    "manuscript"
+  ],
+  "documentationNavigation": {
+    "documents": 44,
+    "relativeLinks": 205,
+    "status": "passed"
+  },
+  "publicAudit": {
+    "cleanSourceCopy": "passed",
+    "workingTreeAfterHardhat": "compiler cache contains an absolute host path; ignored build cache is excluded from release inventory",
+    "detectorChanged": false
+  },
+  "externalRequirements": [
+    "Python and Node toolchains",
+    "Docker and Compose for local execution",
+    "pinned Lean 4.19.0 for formal verification",
+    "permitted pinned dataset access",
+    "Google Cloud project, credentials, permissions, quotas and capacity for distributed execution"
+  ],
+  "principalReproductionEntryFiles": {
+    "checked": 18,
+    "status": "present-and-inventoried"
+  }
+}

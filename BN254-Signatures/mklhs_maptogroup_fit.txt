@@ -1,0 +1,16 @@
+trials  records  mean_gas
+     1       70    255349
+     2       21    259957
+     3       15    264515
+     4        6    269129
+     6        5    278270
+     8        1    287434
+    10        1    296830
+
+admissions = 120, fitted = 119 (index 0 excluded from the fit: 343921 gas at 5 trials)
+mean trials = 1.924 (expected 2), max = 10
+mean admission gas = 259593
+marginal gas per trial = 4592, base = 250758
+
+wrote: mklhs_maptogroup_admissions.csv
+wrote: mklhs_maptogroup_fit.json

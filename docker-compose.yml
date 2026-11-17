@@ -1,0 +1,19 @@
+# Component network and optional read-only explorer. Use run-poc.sh for the full campaign.
+include:
+  - path: network/validators-besu/docker-compose.besu.yml
+
+services:
+  explorer-dashboard:
+    image: nginx:alpine
+    profiles: ["explorer"]
+    restart: unless-stopped
+    depends_on:
+      - node1
+    ports:
+      - "8081:80"
+    volumes:
+      - ./explorer/index.html:/usr/share/nginx/html/index.html:ro
+      - ./explorer/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # read-only view of the repository: serves the ethers bundle already
+      # installed under fhe-pod/node_modules and the deployment manifest.
+      - .:/repo:ro

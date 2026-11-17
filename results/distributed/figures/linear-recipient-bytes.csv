@@ -1,0 +1,7 @@
+group,size,metric,series,observations,sourceMean,sourceSampleSd,sourceMinimum,sourceMaximum,scale,plottedMean,plottedSampleSd
+linear-acr-10,10,linear_canonical_aggregate_bytes,Delivered aggregate,3,592128,0.0,592128,592128,1024,578.25,0.0
+linear-acr-16,16,linear_canonical_aggregate_bytes,Delivered aggregate,3,592128,0.0,592128,592128,1024,578.25,0.0
+linear-acr-27,27,linear_canonical_aggregate_bytes,Delivered aggregate,3,592128,0.0,592128,592128,1024,578.25,0.0
+linear-acr-10,10,linear_cold_baseline_input_bytes,Baseline inputs,3,164480,0.0,164480,164480,1024,160.625,0.0
+linear-acr-16,16,linear_cold_baseline_input_bytes,Baseline inputs,3,263168,0.0,263168,263168,1024,257.0,0.0
+linear-acr-27,27,linear_cold_baseline_input_bytes,Baseline inputs,3,444096,0.0,444096,444096,1024,433.6875,0.0

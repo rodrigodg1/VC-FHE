@@ -1,0 +1,20 @@
+{
+  "name": "vcfhe-linear-application-examples",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Worked, tested application examples for the multi-key linear path (MKLHS-Verification.sol): full client <-> smart-contract interaction with on-chain admission, O(1) result verification, and consumer-side artifact checks.",
+  "scripts": {
+    "demo:mean": "node 01-mean-aggregate/run.mjs",
+    "demo:rate": "node 02-compliance-rate/run.mjs",
+    "demo:sub": "node 03-margin-vs-reference/run.mjs",
+    "demo:variance": "node 04-variance-sufficient-stats/run.mjs",
+    "test": "node --test test/verifiability.test.mjs"
+  },
+  "dependencies": {
+    "@noble/curves": "1.6.0",
+    "ethers": "6.13.4",
+    "ganache": "7.9.2",
+    "solc": "0.8.20"
+  }
+}

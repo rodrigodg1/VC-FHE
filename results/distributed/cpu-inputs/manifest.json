@@ -1,0 +1,8 @@
+{
+  "schema": "public-cpu-inputs-v1",
+  "files": {
+    "retained-v1/coverage.json": "3e61ed2757f74d21fb869ead8e71c8b61d2bb7963c6b8df1177e58f6f5666652",
+    "retained-v1/workflows/c3.jsonl.gz": "e2971f8ff780a6eaf41c07ed1fef2bf84fc6c26b358e12b7bb029a5546c6d05a",
+    "retained-v1/workflows/c4.jsonl.gz": "85e6d543dd1affebf5a132f2c0f4593b0c8dbc5be0b1decbec1137ae241a6dca"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "generator": "scripts/mklhs_maptogroup_gas.js",
+  "generatedAt": "2026-09-02T17:51:01.469Z",
+  "contract": "MKLHSVerification",
+  "datasetSize": 120,
+  "admissions": 120,
+  "fittedAdmissions": 119,
+  "excludedIndexZero": {
+    "index": 0,
+    "trials": 5,
+    "gasUsed": 343921
+  },
+  "meanTrials": 1.9244,
+  "expectedMeanTrials": 2,
+  "maxTrials": 10,
+  "meanAdmissionGas": 259593,
+  "marginalGasPerTrial": 4592,
+  "baseGas": 250758,
+  "trialHistogram": [
+    {
+      "trials": 1,
+      "records": 70,
+      "meanGas": 255349
+    },
+    {
+      "trials": 2,
+      "records": 21,
+      "meanGas": 259957
+    },
+    {
+      "trials": 3,
+      "records": 15,
+      "meanGas": 264515
+    },
+    {
+      "trials": 4,
+      "records": 6,
+      "meanGas": 269129
+    },
+    {
+      "trials": 6,
+      "records": 5,
+      "meanGas": 278270
+    },
+    {
+      "trials": 8,
+      "records": 1,
+      "meanGas": 287434
+    },
+    {
+      "trials": 10,
+      "records": 1,
+      "meanGas": 296830
+    }
+  ]
+}
