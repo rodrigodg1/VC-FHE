@@ -75,7 +75,7 @@ This command creates paid resources and begins a new execution:
   --prepared distributed/generated/NEW_FULL_PREPARATION --execute
 ```
 
-`start` checks source hashes, image availability, identity, capacity and budget.
+`start` validates source hashes, image availability, identity, capacity, and budget.
 It enables missing controller-management APIs, allocates fresh empty host accounts
 and transfers the frozen bundle. VM metadata identities supply cloud access.
 No downloadable service-account key or local login cache is copied to the VM.
@@ -91,9 +91,9 @@ Reconcile its live state before considering recovery.
   --prepared distributed/generated/NEW_FULL_PREPARATION
 ```
 
-`status` first checks terminal cloud records and otherwise reads progress through
-SSH. It never intentionally repeats a protocol operation. Check provider state
-before attempting SSH to a stopped controller. If the observer fails, report
+`status` first looks for terminal cloud records and otherwise reads progress
+through SSH. It never intentionally repeats a protocol operation. Confirm the
+provider state before attempting SSH to a stopped controller. If the observer fails, report
 observation unavailable rather than reusing an old count as current. See
 [operations](../OPERATIONS.md) for full-case counts and incomplete requests.
 
@@ -154,8 +154,8 @@ observations, CSV/Markdown tables, PDF/PNG/SVG plots and hash inventories.
 It must not be used for a segmented run lacking its separate composed-validation
 and delivery record. Missing files or altered plots block teardown. 
 
-Teardown checks live identities and a deletion-only plan using a disposable copy
-of Terraform state. Original state is preserved. The controller is removed last.
+Teardown verifies live identities and validates a deletion-only plan using a
+disposable copy of Terraform state. Original state is preserved. The controller is removed last.
 The evidence bucket and registry are retained. Failed delivery, changed
 sources, ambiguous ownership or incomplete preservation block teardown. Inspect
 journals after interruption rather than regenerating a destructive plan blindly.

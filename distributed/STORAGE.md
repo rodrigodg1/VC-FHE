@@ -27,7 +27,7 @@ It does not account for every possible dataset, archive or readback size.
 Plan separately for live protocol data, archive staging, a complete readback,
 logs, source copies, retained predecessors, snapshots and final delivery. Archive
 scratch must be outside the source being archived. Do not accidentally archive
-an archive into itself. Check regional disk quota before expansion. Never format
+an archive into itself. Confirm regional disk quota before expansion. Never format
 a disk that contains existing chain, keys or counters.
 
 The workflows-only continuation uses explicit margins including 16 GiB for
@@ -49,7 +49,7 @@ Keep real bucket/object references in private receipts only.
 1. Quiesce the relevant writer before archiving a consistent state.
 2. Create a new destination with create-only semantics. Never overwrite evidence.
 3. Read the exact uploaded generation back completely, within a finite timeout.
-4. Check archive hash, member paths, per-file hashes, source identity and inventory.
+4. Verify the archive hash, member paths, per-file hashes, source identity, and inventory.
 5. Retain the original receipt and separate failure or verification outcome.
 
 A metadata lookup, successful upload acknowledgement or matching object size is
@@ -95,7 +95,7 @@ revalidate cryptographic execution or restore a consumed release-policy lineage.
 
 Identify the package format from its own manifest before retrieval:
 
-- Split gzip/TAR packages have ordered byte-range parts. Check every part's size
+- Split gzip/TAR packages have ordered byte-range parts. Verify every part's size
   and SHA-256, concatenate in manifest order, then inspect the resulting archive.
   Individual parts are not independently extractable archives.
 - Content-addressed ZIP packages contain `objects/<sha256>`, source references
@@ -167,7 +167,7 @@ git check-ignore distributed/config.local.json
 git status --short
 ```
 
-`audit-public` checks repository-eligible files for configured sensitive patterns
+`audit-public` scans repository-eligible files for configured sensitive patterns
 and disallowed private file types. It does not read ignored credentials or prove
 the absence of all sensitive information. Review filenames, addresses, resource
 identifiers and free-text logs manually before sharing. Publish only sanitized

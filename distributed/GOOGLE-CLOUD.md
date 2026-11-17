@@ -51,10 +51,10 @@ new matching preparations; do not rewrite historical manifests or seals.
 Use a billing-enabled project with permitted Compute Engine, Artifact Registry,
 IAP, Cloud Resource Manager and Service Usage operations. The authenticated
 operator also needs the IAM/account operations used by the selected route.
-`setup` checks identity, billing, enabled APIs, quotas and advertised CPU platforms.
+`setup` verifies identity, billing, enabled APIs, quotas, and advertised CPU platforms.
 It does not prove that every later resource or IAM write will succeed.
-Check regional/global CPU quotas, disk quotas, addresses, IAP/OS Login access and
-actual zone capacity. A quota allowance does not reserve physical capacity.
+Confirm regional and global CPU quotas, disk quotas, addresses, IAP/OS Login
+access, and actual zone capacity. A quota allowance does not reserve physical capacity.
 
 ```bash
 umask 077
@@ -66,8 +66,8 @@ cp distributed/config.example.json distributed/config.local.json
 ```
 
 Do not overwrite an existing configuration. `setup` resolves missing supported
-SDK/Terraform tools, checks billing and resource prerequisites, and records the operator
-privately. It does not create evaluation VMs or change the billing account.
+SDK/Terraform tools, validates billing and resource prerequisites, and records the
+operator privately. It does not create evaluation VMs or change the billing account.
 It cannot grant unavailable account privileges or quotas.
 
 Terraform needs Application Default Credentials (ADC), in addition to a usable
@@ -153,8 +153,8 @@ terraform -chdir=distributed/generated/terraform-inspection/terraform validate
 `prepare` writes `main.tf.json`, `terraform.tfvars.json`, `bootstrap.sh` and the
 provider lock under `terraform/`, plus the role plan and per-host Compose files.
 `init` can download the provider and writes local `.terraform/` metadata.
-`validate` checks configuration consistency without provisioning resources.
-It does not check quota, credentials or physical zone capacity.
+`validate` verifies configuration consistency without provisioning resources.
+Quotas, credentials, and physical zone capacity require separate verification.
 See [Terraform validation](https://developer.hashicorp.com/terraform/cli/commands/validate).
 
 The protocol configuration in `gcp.py` declares a VPC, four subnets, regional NAT,
@@ -181,7 +181,7 @@ Retain each Terraform state with its matching configuration, source manifest and
 resource-ownership records. State disks have `prevent_destroy`; VMs have deletion
 protection. Do not disable those protections or use a generic destroy command
 as a recovery step. [Controller cleanup](cloud_results/README.md#shutdown-delivery-and-cleanup)
-checks ownership and preservation before removing resources, and retains the
+confirms ownership and preservation before removing resources and retains the
 evidence bucket and image registry.
 
 ## Images: build once, verify before reuse
@@ -244,7 +244,7 @@ repetitions and does not replace the complete 480/18/27 design.
   --quote distributed/quote.smoke.local.json --build distributed/generated/build-UNIQUE-ID
 ```
 
-The six-hour value is a planning input, not a completion guarantee. Check the
+The six-hour value is a planning input, not a completion guarantee. Review the
 actual quote and finite VM duration. Only after preparation passes, the following
 command creates resources and executes the smoke:
 

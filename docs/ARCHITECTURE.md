@@ -8,9 +8,9 @@ perform distributed key setup and recipient-bound output release.
 ## Linear path
 
 Owners authenticate their contributions with signatures and commitments. Record
-admission checks those contributions before aggregate acceptance. The operator
-aggregates the encrypted records and their authentication data. Result checking
-uses the admitted aggregate. Owners and the recipient also check the public
+admission validates those contributions before aggregate acceptance. The operator
+aggregates the encrypted records and their authentication data. Result verification
+uses the admitted aggregate. Owners and the recipient also verify the public
 conversion used by the current grouped-radix threshold profile. The contract
 does not prove that off-chain conversion.
 
@@ -26,8 +26,9 @@ the certificate and settles the dispute without decrypting the intermediate valu
 
 Canonical validity is ciphertext-byte equality under the selected execution
 profile. Equal plaintext values in different ciphertexts need not be canonical.
-Cross-platform byte agreement is checked before distributed measurements. This
-check must not be bypassed when moving to another processor or build.
+The campaign compares ciphertext bytes across platforms before collecting
+distributed measurements. Repeat the comparison when moving to another
+processor or build.
 
 The current default nonlinear path uses `bounty-v2`. The older canonical and
 simulated component routes remain for explicit regression work. Their costs and
@@ -42,7 +43,7 @@ separate step: all contributing owners approve the exact recipient-bound request
 after finality. The on-chain policy consumes a one-use slot and updates cumulative
 owner-bound record counters atomically.
 
-Each KMS core derives the authorization fields from the request and checks the
+Each KMS core derives the authorization fields from the request and verifies the
 same reservation block/hash through four validators. At least three canonical
 responses must agree. The relayer cannot authorize a release by itself. Recipient
 response thresholds, validator consensus and adjudicator certificates have

@@ -20,7 +20,7 @@ raw-evidence validation, read [experiment design](docs/EXPERIMENTS.md). The loca
 
 The launcher supports Homebrew on macOS and apt on Debian/Ubuntu for missing
 prerequisites. Homebrew or administrator privileges must already be available.
-It checks the Docker daemon and prepares a pinned Matplotlib environment. Rust
+It confirms Docker daemon availability and prepares a pinned Matplotlib environment. Rust
 and Node dependencies are built inside the campaign image. Inspection commands
 install nothing. Docker Desktop may need to be started separately.
 
@@ -38,8 +38,8 @@ complete experiment can require substantial time and disk space.
 ./run-poc.sh --preflight
 ```
 
-`--list` shows the design. `--preflight` checks available tools and policy-state
-layout without installing dependencies or creating a lineage. It does not prove
+`--list` shows the design. `--preflight` inspects available tools and the layout
+of the policy state without installing dependencies or creating a lineage. It does not prove
 live chain capacity, dataset availability or cryptographic completion.
 
 ## Pilot, then full execution
@@ -122,7 +122,7 @@ collection is not a substitute for these files.
 | `threshold-kms/runs/RUN_ID/` | Original configuration, state, logs, reports, fixtures, executable records and seal |
 | `threshold-kms/composites/RUN_ID-workflow/` | Derived analysis, separate from the measured source |
 | `workflow/observations.csv`, `workflow/summary.json` | Per-observation values and grouped summaries |
-| `diagnostics/`, `diagnostic-review.json` | Paired-data checks and their bound review |
+| `diagnostics/`, `diagnostic-review.json` | Paired-data diagnostics and their bound review |
 | `setup-review.json`, `setup-review.md` | Hardware/configuration evidence and scope |
 | `metrics.csv`, `METRICS.md` | All grouped metrics, units and sample counts |
 | `figures/` | PDF/PNG/SVG plots and the associated CSV/JSON values |
@@ -132,7 +132,7 @@ collection is not a substitute for these files.
 A complete derivation reports `results-ready`. `--manual-review` writes a
 source-bound diagnostic review template and stops before the final derivation.
 Use `--diagnostic-review PATH` after completing that review. Automated review
-checks recorded diagnostic conditions; it does not claim visual inspection.
+evaluates recorded diagnostic conditions. Manual review allows for visual inspection.
 
 If an earlier derived directory is incomplete, retain it and select a new direct
 child of `threshold-kms/composites/` using `--derived-dir PATH`. Do not rerun the
@@ -153,6 +153,6 @@ resume command for the current deployment.
 
 ## Reproduce retained numbers without services
 
-Use [the numerical collection](results/README.md). Its checksum and statistical
-checks need only Python. Rendering requires the pinned plotting dependencies.
+Use [the numerical collection](results/README.md). Hash verification and statistical
+reconciliation require only Python. Rendering requires the pinned plotting dependencies.
 This route performs no blockchain transaction, decryption or cloud operation.

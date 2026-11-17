@@ -4,7 +4,7 @@ There are three distinct reproduction targets. Choose one before running command
 
 | Target | Guide | Output / acceptance |
 | --- | --- | --- |
-| Recompute statistics from retained observations | [Numerical reproduction](../results/README.md) | Hash/count/statistic checks; regenerated tables and plots; no services |
+| Recompute statistics from retained observations | [Numerical reproduction](../results/README.md) | Verification of hashes, observation counts, and statistics, with tables and plots generated offline |
 | Execute a new full functional experiment locally | [Local guide](../REPRODUCE.md) | New original evidence/seal; 480 measured pairs, 18 warm-ups, 45 full cases |
 | Execute a new geographic functional experiment | [Cloud setup](../distributed/GOOGLE-CLOUD.md), then [controller](../distributed/cloud_results/README.md) | New source/image-bound evidence; 480 pairs, 18 warm-ups, 27 full cases and verified delivery |
 
@@ -17,26 +17,24 @@ New measurements need not reproduce identical wall times, ciphertexts or hashes.
 
 ## Parameter scope
 
-The PoC evaluates encrypted computation, output verification, dispute settlement
-and owner-authorized threshold release using real FHE and KMS operations. The
-upstream Test parameter set reduces the cryptographic workload for functional
-testing. It is sufficient to exercise these workflows on public research inputs.
-Running Default is not a prerequisite for this functional evaluation.
+The PoC uses real FHE and KMS operations in a test deployment to evaluate
+encrypted computation, output verification, dispute settlement, and
+owner-authorized threshold release. The upstream `Test` parameter set reduces
+the cryptographic workload for experiments on public research inputs.
 
-Proposed methods and their baselines use the same cryptographic parameter profile
-and ciphertexts within each comparison. Timings and communication costs describe
-that measured configuration. Costs for other parameter sets require separate
-measurements. The cryptographic assumptions supporting the protocol guarantees
-remain distinct from the functional results. See [security scope](SECURITY.md)
-for the parameter requirements of confidentiality claims.
+Proposed methods and their baselines use the same cryptographic parameter
+profile and ciphertexts within each comparison. Timings and communication
+costs describe the measured test configuration. Costs for other parameter sets
+require separate measurements. See the [security scope](SECURITY.md) for
+production deployments that handle confidential inputs.
 
 ## Inputs and workload meaning
 
-[Pinned dataset acquisition](../threshold-kms/campaign/datasets.py) checks exact
+[Pinned dataset acquisition](../threshold-kms/campaign/datasets.py) verifies exact
 SHA-256 values before use. STAV360 uses revision
 `ef4dd1ea35f275d4240b5886dcc0e372de73d330`; 5G-QoERA uses
 `3add3121ded7a31f1434e863073917772993b74b`. See [dataset terms](../datasets/README.md).
-For QoERA the digest is checked **after** deterministic tab-to-comma conversion.
+For QoERA, the digest covers the bytes **after** deterministic tab-to-comma conversion.
 A mismatch preserves an existing input and aborts; it is not permission to update
 the expected digest. No raw rating files are redistributed here.
 
@@ -79,7 +77,7 @@ are 0/49/99 and nonlinear repetitions 0/14/29. An authorized release is one
 milestone, not the completion of an entire case. Nonlinear cases also include
 honest acceptance, reference/baseline work and challenged faults at early, middle
 or terminal instructions. The 27 full cases include 18 nonlinear disputes, not
-27 disputes. Check [poc_plan.py](../threshold-kms/campaign/poc_plan.py) and
+27 disputes. See [poc_plan.py](../threshold-kms/campaign/poc_plan.py) and
 [experiment_plan.py](../distributed/experiment_plan.py).
 
 Linear baseline: ordinary BLS verification on ciphertext vectors plus encrypted
@@ -121,8 +119,8 @@ and complete dispute and payment evidence. For segmented recovery, validate each
 segment under its own bindings, then exact composed coverage and counter history.
 Never treat a failing original attempt as a passing uninterrupted execution.
 
-Derived numeric checks require correct grouping, units, actual sample counts,
-finite values and matching hashes. Mean/sample SD for three full cases is a small
+Numerical validation requires correct grouping, units, actual sample counts,
+finite values, and matching hashes. Mean/sample SD for three full cases is a small
 sample description, not a population significance claim or tail-latency estimate.
 Do not sum overlapping wall intervals or process memory peaks. CPU, remote
 request/response time, mined block intervals and gas have different boundaries.
@@ -135,4 +133,4 @@ not establish spontaneous honest audit participation, independent administration
 fault rates, or the causal effect of geographic separation. KMS/decryption
 diagnostics are excluded from verification-cost comparisons.
 Read [validation status](VALIDATION.md) before
-interpreting a successful offline check as a new full experiment.
+interpreting a successful offline verification as a new full experiment.

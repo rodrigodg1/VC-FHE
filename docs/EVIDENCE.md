@@ -42,10 +42,9 @@ unprofitable. Neither the contract nor commit/reveal proves independent work.
 
 “No decryption during audit” does not imply zero information disclosure. Public
 records, task metadata, ciphertext lengths, graph structure, timing, approvals and
-authorized outputs remain visible to the relevant observers. The Test profile
-exercises the functional audit and release paths. Confidentiality depends on the
-parameter and protocol requirements in [security scope](SECURITY.md), separately
-from the observed functional behavior.
+authorized outputs remain visible to the relevant observers. The
+[security scope](SECURITY.md) describes the requirements for production
+deployments that handle confidential inputs.
 
 ## Historical observations versus current source
 

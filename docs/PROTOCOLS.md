@@ -35,8 +35,8 @@ ciphertext coordinates and submits an aggregate commitment. Contract equality
 binds this commitment to admitted inputs; the contract does not receive and
 recompute the complete ciphertext vector.
 
-The delivered vector requires an independent digest/commitment check. For the
-current grouped-radix profile, input preparation uses eight base-four blocks,
+The delivered vector's digest and commitment require independent verification.
+Grouped-radix input preparation uses eight base-four blocks,
 at most four records per group, and separate positive/negative subtotals. Public
 carry propagation and admitted bounds make the conversion to the KMS ciphertext
 well-defined. Owners and the recipient have conversion-verification duties; the
@@ -84,7 +84,7 @@ output authorization; rejected computation cannot authorize its invalid output.
   cannot be changed by a relay. Every sampled task auditor is eligible across
   leaves, but no reward forces one to perform replay.
 - A disclosure request blocks unqualified optimistic acceptance. Authenticated
-  publication checks trace/program/provenance roots for each batch. Unauthenticated
+  publication verifies trace/program/provenance roots for each batch. Unauthenticated
   or poisoned prefixes do not satisfy availability. Timely requests during the
   commitment phase preserve a full new replay/commitment interval after disclosure.
 - Bisection uses authenticated branches. Relays can act for both sides. At the
@@ -133,15 +133,15 @@ ciphertext results; it does not invoke a legacy FHEVM leaf-decryption path.
    separately approves it. A changed ciphertext, recipient key or wire request
    does not inherit an earlier approval.
 3. [OnChainReleasePolicy.sol](../threshold-kms/contracts/OnChainReleasePolicy.sol)
-   checks finality, owner approvals, the recipient signature, an unused request
+   verifies finality, owner approvals, the recipient signature, an unused request
    key/slot and cumulative per-record budgets. Reservation consumes identifiers
    and charges counters atomically. Approval flags cannot be revoked.
-4. Each KMS core derives fields from the **received** request, checks the pinned
+4. Each KMS core derives fields from the **received** request, verifies the pinned
    chain/policy and exact reservation at one fixed block height/hash supported
-   by three of four configured validator responses, checks workflow/output binding,
+   by three of four configured validator responses, validates workflow/output binding,
    and consumes its durable request marker before MPC participation.
 5. The designated recipient combines the required encrypted threshold responses
-   and checks them. Public evaluation, copying ciphertexts and use/redistribution
+   and verifies them. Public evaluation, copying ciphertexts and use/redistribution
    of authorized plaintext are not prevented by this release policy.
 
 See [onchain_release.rs](../threshold-kms/src/onchain_release.rs),
@@ -163,7 +163,7 @@ purposes. None replaces Besu's own consensus assumptions.
 The specification requires independent recipient delivery/conversion checks.
 In the measured PoC, owners and the coordinator performed grouped conversion or
 nonlinear trace/output checks; the recipient hashed the ciphertext, signed the
-request and checked threshold responses. The KMS guard has its separate workflow
+request and verified threshold responses. The KMS guard has its separate workflow
 and conversion duties. Do not describe the observed recipient as having performed
 all independently specified checks or infer independent trust domains from those
 coordinator checks. The [proof mapping](../formal/SOURCE_CORRESPONDENCE.md) records

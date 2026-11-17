@@ -2,12 +2,41 @@
 
 This repository contains the VC-FHE proof of concept for verifying computations performed by an external operator over encrypted user data while allowing data owners to control who can decrypt accepted results. The evaluation uses network Quality of Experience (QoE) as a case study, focusing on aggregating users' video ratings and assessing whether video sessions in a selected geographic area meet a quality target. These tasks involve individual records that may contain sensitive information.
 
-
-
 The implementation includes smart contracts, FHE executors, threshold-KMS adapters, Docker Compose services, Google Cloud orchestration, tests, and measurement tools. The supported end-to-end configuration uses [TFHE-rs](https://github.com/zama-ai/tfhe-rs) for encrypted computation, four [Besu](https://github.com/besu-eth/besu) validators running QBFT, and four [Zama KMS](https://docs.zama.org/protocol/protocol/overview/kms) participants for distributed key generation and threshold decryption. The workflow covers result verification, dispute settlement, and owner-authorized result release.
 
 
-The [Google Cloud measurements](results/distributed/README.md) and [numerical reproduction guide](results/README.md) are available for independent analysis. See [parameter scope](docs/EXPERIMENTS.md#parameter-scope) for the evaluation objectives and [security scope](docs/SECURITY.md) for confidentiality requirements.
+We evaluated the workflow in a test deployment using public research inputs and the [`Test` parameter profile](docs/EXPERIMENTS.md#parameter-scope). The [Google Cloud measurements](results/distributed/README.md) and [numerical reproduction guide](results/README.md) are available for independent analysis. The [security scope](docs/SECURITY.md) describes the requirements for production deployments that handle confidential data.
+
+
+
+## Choose a starting point
+
+For a guided review, see the [technical documentation](docs/README.md).
+
+| Goal | Entry point |
+| --- | --- |
+| Understand the architecture and protocol roles | [Architecture](docs/ARCHITECTURE.md) |
+| Trace linear and nonlinear verification, disputes, and result release | [Protocol flows](docs/PROTOCOLS.md) |
+| Review security assumptions, test parameters, and private-state handling | [Security and limitations](docs/SECURITY.md) |
+| Inspect challenge payments, penalties, and incentive conditions | [Incentive analysis](docs/INCENTIVES.md) |
+| Find the source files, tests, and measurements behind protocol claims | [Evidence map](docs/EVIDENCE.md) |
+| Verify the Lean model proofs and inspect the reviewed mapping to the code | [Lean proofs](formal/README.md) and [source correspondence](formal/SOURCE_CORRESPONDENCE.md) |
+| Confirm dataset versions, workloads, baselines, and the measured setup | [Experiment design](docs/EXPERIMENTS.md), [input datasets](datasets/README.md), and [measured cloud setup](results/distributed/setup.json) |
+| Examine the nonlinear QoE predicates and reference tests | [Circuit correctness](docs/compliance-circuit-correctness.md) |
+| Inspect the Google Cloud measurements used in the paper | [Cloud results and CSV files](results/distributed/README.md) |
+| Interpret timing, CPU, gas, communication, and CSV fields | [Metrics](docs/METRICS.md) and [data dictionary](results/DATA-DICTIONARY.md) |
+| Recompute statistics and regenerate summary plots offline | [Numerical reproduction](results/README.md) |
+| Review prior validation and run component tests | [Validation record](docs/VALIDATION.md) and [development guide](docs/DEVELOPMENT.md) |
+| Preview the local experiment plan | `./run-poc.sh --list` |
+| Prepare a new run on one Docker host | [Local reproduction](REPRODUCE.md) |
+| Prepare a new run across Google Cloud regions | [Distributed overview](distributed/README.md) and [cloud runbook](distributed/GOOGLE-CLOUD.md) |
+
+
+
+
+
+
+
 
 
 ## Repository map
@@ -28,8 +57,11 @@ The [Google Cloud measurements](results/distributed/README.md) and [numerical re
 | `Anatel/` | Full and simplified QoE demonstrations inspired by Anatel's RQUAL indicators |
 | `toolkit/` | Command-line expression compiler, supported operations, and QoE examples |
 | `examples/` | Arithmetic trace walkthrough and linear application examples for source inspection |
-| `scripts/` | Documentation link checks, checks on the public distribution, and SHA-256 inventories for retained experiment files |
+| `scripts/` | Markdown link validation, public distribution audits, and SHA-256 inventories for retained experiment files |
 | `results/` | CSV measurements from the [Google Cloud evaluation](results/distributed/README.md) and [local runs](results/local-archive/), with summary statistics, plots, and scripts to reproduce the numerical analysis offline |
+
+
+
 
 
 ## Processing Encrypted QoE Data with Verifiable Results
@@ -48,12 +80,12 @@ Consider a network provider that wants to determine whether at least 95% of vide
 
 4. **Authorized result disclosure.** After the computation result has been verified and finalized, all contributing data owners approve the exact decryption request for the designated recipient. The network provider, or another authorized recipient, can then obtain the final decision without accessing individual session records, which remain encrypted.
 
-The all-sessions experiment checks whether at least 95% of the sessions in each
-input set have a mean opinion score (MOS) above 2.0. Both quality checks use
-model-derived scores based on simulated 5G performance along real mobility
-traces, as described in the [5G-QoERA paper](https://telematics.poliba.it/wp-content/uploads/publications/2025/wcnc25boffetti.pdf).
-For the regional check, the circuit receives an encrypted score and an encrypted
-geographic cell identifier as its only per-session inputs. The linear experiment
+The all-sessions experiment determines whether at least 95% of the sessions in
+each input set have a mean opinion score (MOS) above 2.0. Both nonlinear
+computations use model-derived scores based on simulated 5G performance along
+real mobility traces, as described in the [5G-QoERA paper](https://telematics.poliba.it/wp-content/uploads/publications/2025/wcnc25boffetti.pdf).
+The regional circuit receives an encrypted score and an encrypted geographic
+cell identifier as its only per-session inputs. The linear experiment
 verifies the encrypted sum of subjective ratings of 360° videos from
 [STAV360](https://github.com/SLG-European-Projects/STAV360). After authorized
 decryption, the recipient divides the sum by the public number of ratings to
@@ -61,24 +93,7 @@ obtain the mean. The [experiment guide](docs/EXPERIMENTS.md#inputs-and-workload-
 describes input selection and all three computations.
 
 
-## Choose a starting point
 
-| Goal | Entry point |
-| --- | --- |
-| Understand the roles and acceptance rules | [Architecture](docs/ARCHITECTURE.md) |
-| Understand challenge payments and incentive conditions | [Incentives and proofs](docs/INCENTIVES.md) |
-| Follow acceptance, dispute and authorization transitions | [Protocol flows](docs/PROTOCOLS.md) |
-| Inspect assumptions and their supporting evidence | [Evidence map](docs/EVIDENCE.md) |
-| Choose a reproduction target and interpret the experiment | [Experiment design](docs/EXPERIMENTS.md) |
-| Verify the protocol model proofs | [Lean proofs](formal/README.md) |
-| Inspect the experiment without starting services | `./run-poc.sh --list` |
-| Run on one Docker host | [Local reproduction](REPRODUCE.md) |
-| Run across Google Cloud regions | [Distributed overview](distributed/README.md) and [runbook](distributed/GOOGLE-CLOUD.md) |
-| Verify retained numerical results and regenerate plots | [Results](results/README.md) |
-| Inspect the latest Google Cloud results and plots | [Cloud results](results/distributed/README.md) |
-| Interpret timers, CPU, gas and communication | [Metrics](docs/METRICS.md) |
-| Develop or run regression checks | [Development](docs/DEVELOPMENT.md) |
-| Understand assumptions and handle private state | [Security and limitations](docs/SECURITY.md) |
 
 The current scientific results are the distributed collection. `results/local-archive/`
 retains a separate local experiment for reference. The two collections must not be
@@ -89,7 +104,7 @@ and dataset access stated in the guides.
 ## Local execution
 
 Run from this directory on Linux, macOS or WSL2, with Python 3.10+, Git and Docker
-with Compose v2. The launcher checks supported dependencies and prepares isolated
+with Compose v2. The launcher verifies prerequisites and prepares isolated
 build and plotting environments. See the reproduction guide before executing:
 
 ```bash
@@ -100,7 +115,8 @@ build and plotting environments. See the reproduction guide before executing:
 
 The preflight inspects prerequisites. The readiness command executes a separate
 largest-case pilot. The last command runs the complete experiment and derives its
-results. It is not a quick demonstration. Check available disk and Docker memory.
+results. It is not a quick demonstration. Confirm available disk space and
+Docker memory.
 
 Independent routes are `./run-linear.sh` and `./non-linear.sh`. Add `--readiness`
 to select their pilots. `run-nonlinear.sh` is an alias. Each invocation creates a

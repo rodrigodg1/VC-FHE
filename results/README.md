@@ -1,7 +1,7 @@
 # Retained numerical results
 
 This collection preserves observations from local and geographically distributed
-PoC executions. It supports independent statistical checks and plot generation
+PoC executions. It supports independent statistical verification and plot generation
 without Docker or Google Cloud. It does not contain the raw keys, ciphertexts,
 executables or chain databases required for complete protocol revalidation.
 
@@ -30,8 +30,8 @@ python3 results/reproduce.py
 python3 results/reproduce.py --collection distributed
 ```
 
-The script checks file hashes, metric inventory, observation counts, means, sample
-standard deviations and ranges. It preserves integer precision for gas/economic
+The script verifies file hashes, the metric inventory, observation counts, means,
+sample standard deviations, and ranges. It preserves integer precision for gas/economic
 quantities. It also reconciles the distributed receipt endpoints and per-process
 CPU budgets, including context certification and full auditing.
 

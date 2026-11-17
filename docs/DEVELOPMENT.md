@@ -19,10 +19,10 @@ Node tests. It does not create resources. Tests use synthetic data and mocked
 provider operations where indicated. Passing them does not establish full
 FHE/KMS or cloud execution on the current source version.
 
-`check-docs.py` checks relative Markdown targets and heading anchors offline. It
-does not validate external URLs or execute fenced examples. `check-public.py`
-checks configured patterns, not every possible disclosure. Neither replaces
-manual review. Run the public audit on a clean release copy. Hardhat compiler
+`check-docs.py` validates relative Markdown targets and heading anchors offline.
+External URLs and fenced examples require separate review. `check-public.py`
+scans for configured patterns. Use both tools alongside manual review. Run the
+public audit on a clean release copy. Hardhat compiler
 caches contain absolute host paths even when Git ignores them; the audit correctly
 rejects a working tree containing those paths. Exclude generated/cache directories
 when packaging, then audit the actual release copy. Do not archive the working
@@ -47,7 +47,7 @@ cargo test --release --manifest-path output-binding-lhs/Cargo.toml
 Contract suites that require a live chain must use their documented chain
 harness and network settings. Do not point tests at a chain with retained release
 budgets. Native FHE tests can be slow. The package scripts list further explicit
-contract, authorization, adversarial and canonical-execution checks.
+contract, authorization, adversarial and canonical-execution tests.
 
 ## Source and result changes
 
@@ -61,8 +61,8 @@ Analysis changes do not require replaying releases. Derive into a new directory,
 validate the original source evidence and compare the resulting numeric outputs.
 When changing timer boundaries or protocol execution, collect matching new data.
 
-The [validation report](VALIDATION.md) records the checks performed for this
-distribution and the dependencies of each reproduction route.
+The [validation report](VALIDATION.md) records the tests and verification steps
+performed for this distribution and the dependencies of each reproduction route.
 
 ## Formal verification
 
@@ -85,7 +85,7 @@ audit. Review its correspondence and retain new verification evidence separately
 
 | Tool or input | Pin / source of truth | Used for |
 | --- | --- | --- |
-| Python 3.10+ | Controller syntax and tests | Planning, validators, numeric checks |
+| Python 3.10+ | Controller syntax and tests | Planning, validators, numerical validation |
 | Node 22.10+ within major 22 | Component `package.json` and npm locks | Contracts, transport and offline tests |
 | Rust / TFHE / KMS | Campaign build scripts, upstream commit and Cargo locks | Native execution; separate component profiles retain separate locks |
 | Besu 25.3.0 locally | `network/validators-besu/docker-compose.besu.yml` | Four-validator QBFT, chain ID 46853, two-second blocks |
